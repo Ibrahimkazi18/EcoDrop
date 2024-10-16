@@ -2,12 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase"; // Import auth from firebase.ts
+import { auth, signInWithGoogle } from "@/lib/firebase"; // Import auth from firebase.ts
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast"; // Make sure this is correctly implemented
 import { Button } from "@/components/ui/button"; // Import ShadCN Button
 import { Input } from "@/components/ui/input"; // Import ShadCN Input
 import { Label } from "@/components/ui/label"; // Import ShadCN Label
+import { FcGoogle } from "react-icons/fc";
 
 export default function SignIn() {
   const [email, setEmail] = useState<string>("");
@@ -26,7 +27,6 @@ export default function SignIn() {
       sessionStorage.setItem("user", "true");
 
       // Navigate to dashboard on success
-      
       toast({
           title: "Sign In Successful",
           description: `${email} logged in to the Dashboard at ${date.toLocaleString()}`, // Display a readable date format
@@ -44,6 +44,29 @@ export default function SignIn() {
       });
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithGoogle();
+      sessionStorage.setItem("user", "true");
+
+      toast({
+        title: "Google Sign In Successful",
+        description: `${result.user.email} logged in with Google.`,
+      });
+
+      router.push("/dashboard");
+
+    } catch (error) {
+        console.error("Google Sign-In error:", error);
+        setError("Failed to log in with Google. Try again.");
+  
+        toast({
+          title: "Google Sign In Unsuccessful",
+          description: `Could not log in with Google.`,
+        });
+      }      
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -83,9 +106,13 @@ export default function SignIn() {
               />
             </div>
           </div>
-          <div>
+          <div className="space-y-4">
             <Button type="submit" className="w-full">
               Log In
+            </Button>
+            <Button variant="outline" onClick={handleGoogleSignIn} className="w-full flex items-center justify-center">
+              <FcGoogle className="mr-2" size={20} />
+              Log In with Google
             </Button>
           </div>
         </form>

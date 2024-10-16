@@ -2,12 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // Import auth from firebase.ts
+import { auth, signInWithGoogle } from "@/lib/firebase"; // Import auth from firebase.ts
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button"; // Import ShadCN Button
 import { Input } from "@/components/ui/input"; // Import ShadCN Input
 import { Label } from "@/components/ui/label"; // Import ShadCN Label
 import { useToast } from "@/hooks/use-toast"; // Ensure this hook is correctly implemented
+import { FcGoogle } from "react-icons/fc";
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
@@ -43,6 +44,29 @@ export default function SignUp() {
       });
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithGoogle();
+      sessionStorage.setItem("user", "true");
+
+      toast({
+        title: "Google Sign Up Successful",
+        description: `${result.user.email} signed up with Google.`,
+      });
+
+      router.push("/dashboard");
+
+    } catch (error) {
+        console.error("Google Sign-Up error:", error);
+        setError("Failed to sign up with Google. Try again.");
+  
+        toast({
+          title: "Google Sign Up Unsuccessful",
+          description: `Could not sign-up with Google.`,
+        });
+      }      
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -82,9 +106,13 @@ export default function SignUp() {
               />
             </div>
           </div>
-          <div>
+          <div className="space-y-4">
             <Button type="submit" className="w-full">
               Sign Up
+            </Button>
+            <Button variant="outline" onClick={handleGoogleSignIn} className="w-full flex items-center justify-center">
+              <FcGoogle className="mr-2" size={20} />
+              Sign Up with Google
             </Button>
           </div>
         </form>
