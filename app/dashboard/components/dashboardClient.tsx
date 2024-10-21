@@ -7,10 +7,13 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import ThemeChanger from "@/components/ui/theme-changer";
 
 interface DashboardClientProps {
   children: React.ReactNode;
 }
+
+export const revalidate = 0;
 
 const DashboardClient = ({ children }: DashboardClientProps) => {
   const [user] = useAuthState(auth);
@@ -49,6 +52,8 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
         >
           Log Out
         </button>
+
+        <ThemeChanger />
       </div>
       {children}
     </div>

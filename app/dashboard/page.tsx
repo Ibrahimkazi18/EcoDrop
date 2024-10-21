@@ -1,8 +1,12 @@
 
 
+export const revalidate = 0;
+
 const DashboardPage = () => {
   return (
-    <div>Dashboard</div>
+    <div>
+      Hello
+    </div>
   )
 }
 

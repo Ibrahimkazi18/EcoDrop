@@ -1,19 +1,24 @@
 // layout.tsx (Server Component)
-import { redirect } from "next/navigation";
 import DashboardClient from "./components/dashboardClient";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+export const revalidate = 0;
+
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
-    <div>
-      <DashboardClient>
-        {children}
-      </DashboardClient>
-    </div>
+      <SidebarProvider>
+        <AppSidebar />
+          <SidebarTrigger />
+          <DashboardClient>
+            {children}
+          </DashboardClient>
+      </SidebarProvider>
   );
 };
 
