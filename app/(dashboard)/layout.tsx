@@ -1,5 +1,5 @@
 // layout.tsx (Server Component)
-import DashboardClient from "./components/dashboardClient";
+import DashboardClient from "@/app/(dashboard)/components/dashboardClient";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 

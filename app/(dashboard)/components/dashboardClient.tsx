@@ -4,7 +4,7 @@
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import ThemeChanger from "@/components/ui/theme-changer";
@@ -41,6 +41,16 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
     sessionStorage.removeItem("user");
     router.push("/sign-in"); // Redirect to sign-in after logging out
   };
+
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); // Runs after hydration
+  }, []);
+
+  if (!isClient) {
+    return null; // Server-side render nothing
+  }
 
   return (
     <div>

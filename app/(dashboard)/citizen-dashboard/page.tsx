@@ -1,8 +1,7 @@
-
-
-export const revalidate = 0;
+"use client"
 
 const DashboardPage = () => {
+
   return (
     <div>
       Hello
