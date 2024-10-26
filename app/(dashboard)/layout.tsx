@@ -12,8 +12,8 @@ export const revalidate = 0;
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
-      <SidebarProvider>
-        <AppSidebar />
+      <SidebarProvider suppressHydrationWarning>
+          <AppSidebar />
           <SidebarTrigger />
           <DashboardClient>
             {children}

@@ -1,4 +1,5 @@
-import { Calendar, Home, Inbox, Search, Settings, Trash2 } from "lucide-react"
+"use client"
+import { Bell, Calendar, Home, Inbox, Mail, Search, Settings, SkipBack, Trash, Trophy, Users } from "lucide-react"
 
 import {
   Sidebar,
@@ -13,48 +14,131 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import ThemeChanger from "./ui/theme-changer"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import UserGreeting from "./user-greeting"
 
-// Menu items.
-const items = [
+// Menu CitizenLabels.
+const CitizenLabels = [
   {
     title: "Home",
-    url: "#",
+    url: "/citizen-dashboard",
     icon: Home,
   },
   {
-    title: "Inbox",
-    url: "#",
+    title: "Report",
+    url: "/citizen-dashboard/report",
     icon: Inbox,
   },
   {
-    title: "Calendar",
-    url: "#",
+    title: "Notifications",
+    url: "/citizen-dashboard/notifications",
     icon: Calendar,
   },
   {
-    title: "Search",
-    url: "#",
+    title: "Rewards",
+    url: "/citizen-dashboard/rewards",
     icon: Search,
   },
-  
+  {
+    title: "Leaderboard",
+    url: "/citizen-dashboard/leaderboard",
+    icon: Trophy,
+}
+]
+
+const AgencyLabels = [
+    {
+      title: "Home",
+      url: "/agency-dashboard",
+      icon: Home,
+    },
+    {
+      title: "Requests",
+      url: "/agency-dashboard/requests",
+      icon: Mail,
+    },
+    {
+      title: "Volunteers",
+      url: "/agency-dashboard/volunteers",
+      icon: Users,
+    },
+    {
+      title: "Notifications",
+      url: "/agency-dashboard/notifications",
+      icon: Bell,
+    }, 
+    {
+        title: "Leaderboard",
+        url: "/agency-dashboard/leaderboard",
+        icon: Trophy,
+    }
+]
+
+const VolunteerLabels = [
+    {
+      title: "Home",
+      url: "/volunteer-dashboard",
+      icon: Home,
+    },
+    {
+      title: "Tasks",
+      url: "/volunteer-dashboard/tasks",
+      icon: Mail,
+    },
+    {
+      title: "Status",
+      url: "/volunteer-dashboard/status",
+      icon: Calendar,
+    },
+    {
+      title: "Notifications",
+      url: "/volunteer-dashboard/notifications",
+      icon: Search,
+    }, 
+    {
+        title: "Leaderboard",
+        url: "/volunteer-dashboard/leaderboard",
+        icon: Trophy,
+    }
 ]
 
 const settings = {
     title: "Settings",
-    url: "#",
+    url: "/settings",
     icon: Settings,
 }
 
 export function AppSidebar() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, [])
+
+  if(!isMounted) return null;
+
+  const pathName = usePathname();
+
+  const items = pathName.includes("agency-dashboard") ? 
+                    AgencyLabels : pathName.includes("citizen-dashboard") ? 
+                        CitizenLabels : VolunteerLabels;
+
+  
+
   return (
     <Sidebar collapsible="icon">
-        <SidebarHeader>
-            
-            <SidebarMenuItem className="list-none text-center flex">
-                <Trash2 />
-                Hello User,
-            </SidebarMenuItem>
-        </SidebarHeader>    
+        <SidebarGroup>
+            <SidebarGroupLabel>
+                <SidebarMenuItem className="list-none text-center flex">
+                        <SidebarMenuButton asChild >
+                            <>
+                                <UserGreeting />
+                            </>
+                        </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroupLabel>
+        </SidebarGroup>    
 
         <SidebarContent>
             <SidebarGroup>
@@ -65,8 +149,8 @@ export function AppSidebar() {
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
                                         <a href={item.url}>
-                                        <item.icon />
-                                        <span>{item.title}</span>
+                                            <item.icon />
+                                            <span>{item.title}</span>
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
@@ -80,7 +164,7 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem className="flex"> 
-                                <SidebarMenuButton asChild variant={null}>
+                                <SidebarMenuButton asChild variant={"default"} className="hover:bg-inherit">
                                     <div>
                                         <ThemeChanger />
                                         <span>Toggle Mode</span>

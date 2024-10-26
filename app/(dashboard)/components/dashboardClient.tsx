@@ -55,7 +55,6 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
   return (
     <div>
       <div>
-        Dashboard
         <button
           onClick={handleSignOut}
           className="bg-red-500 text-white px-4 py-2 rounded"
@@ -63,7 +62,6 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
           Log Out
         </button>
 
-        <ThemeChanger />
       </div>
       {children}
     </div>
