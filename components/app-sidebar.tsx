@@ -1,5 +1,5 @@
 "use client"
-import { Bell, Calendar, Home, Inbox, Mail, Search, Settings, SkipBack, Trash, Trophy, Users } from "lucide-react"
+import { Bell, Calendar, Home, Inbox, Mail, Search, Settings, Trophy, Users } from "lucide-react"
 
 import {
   Sidebar,

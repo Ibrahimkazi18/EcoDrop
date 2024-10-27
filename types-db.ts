@@ -2,6 +2,8 @@ import { Timestamp } from "firebase/firestore";
 
 export type Role = "citizen" | "volunteer" | "agency";
 
+export type ToggleSidebarType = (isOpen: boolean) => void;
+
 // General User Interface
 export interface User {
   id: string;
