@@ -2,12 +2,10 @@
 "use client"; // Ensures this is a client-side component
 
 import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import ThemeChanger from "@/components/ui/theme-changer";
 
 interface DashboardClientProps {
   children: React.ReactNode;
@@ -36,12 +34,6 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
     }
   }, [user, router]);
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    sessionStorage.removeItem("user");
-    router.push("/sign-in"); // Redirect to sign-in after logging out
-  };
-
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -54,15 +46,6 @@ const DashboardClient = ({ children }: DashboardClientProps) => {
 
   return (
     <div>
-      <div>
-        <button
-          onClick={handleSignOut}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
-          Log Out
-        </button>
-
-      </div>
       {children}
     </div>
   );

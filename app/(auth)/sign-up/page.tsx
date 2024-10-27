@@ -2,11 +2,11 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // Import auth from firebase.ts
+import { auth } from "@/lib/firebase"; 
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button"; // Import ShadCN Button
-import { Input } from "@/components/ui/input"; // Import ShadCN Input
-import { Label } from "@/components/ui/label"; // Import ShadCN Label
+import { Button } from "@/components/ui/button"; 
+import { Input } from "@/components/ui/input"; 
+import { Label } from "@/components/ui/label"; 
 import {
   Select,
   SelectContent,
@@ -15,77 +15,98 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import ShadCN Select components
-import { useToast } from "@/hooks/use-toast"; // Ensure this hook is correctly implemented
-import { Role, User } from "@/types-db"; // Import your Role and User interfaces
-import { setDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase"; // Import your Firestore instance
+} from "@/components/ui/select"; 
+import { useToast } from "@/hooks/use-toast"; 
+import { Agency, Citizen, Role, User } from "@/types-db"; 
+import { setDoc, doc, collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase"; 
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<Role | "">(""); // Role state
+  const [role, setRole] = useState<Role | "">(""); 
   const [error, setError] = useState<string>("");
-  const [isMounted, setIsMounted] = useState(false); // New state to track mount status
+  const [isMounted, setIsMounted] = useState(false); 
   const router = useRouter();
   const { toast } = useToast();
 
-  // Effect to set the mount status
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  if (!isMounted) return null;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(""); // Reset error before submission
     const date = new Date();
-
-    // Check if a role is selected before proceeding
-    if (!role) {
-      setError("Please select a role before signing up.");
-      return;
-    }
-
+  
     try {
-      // Firebase authentication for creating a user
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const userId = userCredential.user.uid; // Get the user ID from the created user
+        // Check if the email is already in use with a different role
+        const usersRef = collection(db, "users");
+        const emailQuery = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(emailQuery);
 
-      // Create user data object
-      const userData: User = { id: userId, email, username: username, role, createdAt: date }; // Include role
+        // If the query finds any documents, the email is already registered
+        if (!querySnapshot.empty) {
+            const existingUser = querySnapshot.docs[0].data(); // Get the first document data
 
-      // Store user data in Firestore
-      await setDoc(doc(db, "users", userId), userData);
+            // Check if the existing user's role is different from the selected role
+            if (existingUser.role !== role) {
+                setError("This email is already registered under another role. Please use a different email.");
+                return; // Exit the function
+            }
+        }
 
-      // Use sessionStorage only on client-side
-      sessionStorage.setItem("user", "true");
+        // Check if a role is selected before proceeding
+        if (!role) {
+            setError("Please select a role before signing up.");
+            return; // Exit the function
+        }
 
-      toast({
-        title: "Sign Up Successful",
-        description: `${email} signed up at ${date.toLocaleString()}`,
-      });
+        // Proceed to create the user with Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid; // Get the user ID from the created user
 
-      // Navigate to the dashboard based on role
-      if (role === "agency") {
-        router.push("/agency-dashboard");
-      } else if (role === "citizen") {
-        router.push("/citizen-dashboard");
-      }
+        // Create user data object
+        const userData: User = { id: userId, email, username: username, role, createdAt: date };
+
+        // Store user data in Firestore
+        await setDoc(doc(db, "users", userId), userData);
+
+        if (role === "citizen") {
+            const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, communityIds: [""] };
+            await setDoc(doc(db, "citizens", userId), citizenData);
+        } else if (role === "agency") {
+            const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, agencyName: "", contactInfo: { phone: "", address: "" }, volunteers: [""], ratings: [] };
+            await setDoc(doc(db, "agencies", userId), agencyData);
+        }
+
+        // Use sessionStorage only on client-side
+        sessionStorage.setItem("user", "true");
+
+        toast({
+            title: "Sign Up Successful",
+            description: `${email} signed up at ${date.toLocaleString()}`,
+        });
+
+        // Navigate to the dashboard based on role
+        if (role === "agency") {
+            router.push("/agency-dashboard");
+        } else if (role === "citizen") {
+            router.push("/citizen-dashboard");
+        }
 
     } catch (err: any) {
-      // Handle errors and show in the toast notification
-      setError(err.message);
-
-      toast({
-        title: "Sign Up Unsuccessful",
-        description: `${email} could not sign up. Error: ${err.message}`,
-      });
+        setError(err.message);
+        toast({
+            title: "Sign Up Unsuccessful",
+            description: `${email} could not sign up. Error: ${err.message}`,
+        });
     }
-  };
+};
 
-  // Prevent rendering the form until mounted
-  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -103,7 +124,7 @@ export default function SignUp() {
               <Input
                 id="username"
                 name="username"
-                type="string"
+                type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -164,7 +185,7 @@ export default function SignUp() {
         <p className="mt-2 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <a
-            href="/auth/sign-in"
+            href="/sign-in"
             className="font-medium text-indigo-600 hover:text-indigo-500"
           >
             Log In
