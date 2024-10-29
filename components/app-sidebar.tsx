@@ -8,7 +8,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -17,8 +16,12 @@ import ThemeChanger from "./ui/theme-changer"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import UserGreeting from "./user-greeting"
+import { auth } from "@/lib/firebase"
 
 // Menu CitizenLabels.
+const currentUser = auth.currentUser?.uid ? auth.currentUser?.uid : "nouserid"
+console.log(currentUser)
+
 const CitizenLabels = [
   {
     title: "Home",
@@ -48,31 +51,31 @@ const CitizenLabels = [
 ]
 
 const AgencyLabels = [
-    {
-      title: "Home",
-      url: "/agency-dashboard",
-      icon: Home,
-    },
-    {
-      title: "Requests",
-      url: "/agency-dashboard/requests",
-      icon: Mail,
-    },
-    {
-      title: "Volunteers",
-      url: "/agency-dashboard/volunteers",
-      icon: Users,
-    },
-    {
-      title: "Notifications",
-      url: "/agency-dashboard/notifications",
-      icon: Bell,
-    }, 
-    {
-        title: "Leaderboard",
-        url: "/agency-dashboard/leaderboard",
-        icon: Trophy,
-    }
+  {
+    title: "Home",
+    url: `/agency-dashboard/${currentUser}`,
+    icon: Home,
+  },
+  {
+    title: "Requests",
+    url: `/agency-dashboard/${currentUser}/requests`,
+    icon: Mail,
+  },
+  {
+    title: "Volunteers",
+    url: `/agency-dashboard/${currentUser}/volunteers`,
+    icon: Users,
+  },
+  {
+    title: "Notifications",
+    url: `/agency-dashboard/${currentUser}/notifications`,
+    icon: Bell,
+  },
+  {
+    title: "Leaderboard",
+    url: `/agency-dashboard/${currentUser}/leaderboard`,
+    icon: Trophy,
+  },
 ]
 
 const VolunteerLabels = [

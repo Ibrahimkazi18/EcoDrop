@@ -1,22 +1,23 @@
-import { useUser } from "@/hooks/use-user"; // Adjust the import path
-import Spinner from "@/components/ui/spinner";; // Optional: a spinner for loading state
+import { useUser } from "@/hooks/use-user"; 
+import { auth } from "@/lib/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
-const UserProfile = () => {
+const UserGreeting = () => {
   const { user, loading } = useUser();
 
-  if (loading) {
-    return <Spinner />; // Show a loading spinner or skeleton
-  }
+  const [us, load, error] = useAuthState(auth);
 
-  return (
+  return (  
     <div>
       {user ? (
-        <h1>Welcome, {user.username}!</h1> // Access username here
+        <h1>Welcome, {user?.username}!</h1> 
       ) : (
-        <p>User not found</p>
+        <p>Not Found</p>
       )}
+
+      {us? (<p>{us.displayName}</p>) : (<p>no</p>)}
     </div>
   );
 };
 
-export default UserProfile;
+export default UserGreeting;

@@ -10,17 +10,18 @@ import Heading from "@/components/heading"
 import { DataTable } from "@/components/ui/data-table"
 
 interface ProductClientProps  {
-  data : VolunteerColumn[]
+  data : VolunteerColumn[],
+  agencyId: string;
 }
 
-const ProductClient = ({ data } : ProductClientProps ) => {
+const ProductClient = ({ data, agencyId } : ProductClientProps) => {
   const router = useRouter()
 
   return (
     <>
         <div className="flex items-center justify-between">
             <Heading title={`Volunteers (${data.length})`} description="Manage volunteers for your agency"/>
-            <Button onClick={() => router.push(`/agency-dashboard/volunteers/create`)}>
+            <Button onClick={() => router.push(`/agency-dashboard/${agencyId}/volunteers/create`)}>
                 <Plus className="h-4 w-4 mr-2"/>
                 Add New
             </Button>
