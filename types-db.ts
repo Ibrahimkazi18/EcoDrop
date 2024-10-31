@@ -10,6 +10,7 @@ export interface User {
   email: string;
   username: string;
   role: Role;
+  agencyId ?: string;
   createdAt: Date;
 }
 
@@ -26,8 +27,8 @@ export interface Volunteer extends User {
   agencyId: string;            // The agency the volunteer is associated with
   status: "available" | "working" | "unavailable";
   tasksAssigned: string[];     // IDs of tasks assigned to the volunteer
-  temporaryPassword: string;   // Initially generated password
   hasSetPermanentPassword: boolean; // Flag to track if they have set their password
+  points: number;
 }
 
 // Agency Interface

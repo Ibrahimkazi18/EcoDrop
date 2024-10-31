@@ -20,99 +20,111 @@ import { auth } from "@/lib/firebase"
 
 // Menu CitizenLabels.
 const currentUser = auth.currentUser?.uid ? auth.currentUser?.uid : "nouserid"
-console.log(currentUser)
+let agencyId : string;
 
-const CitizenLabels = [
-  {
-    title: "Home",
-    url: "/citizen-dashboard",
-    icon: Home,
-  },
-  {
-    title: "Report",
-    url: "/citizen-dashboard/report",
-    icon: Inbox,
-  },
-  {
-    title: "Notifications",
-    url: "/citizen-dashboard/notifications",
-    icon: Calendar,
-  },
-  {
-    title: "Rewards",
-    url: "/citizen-dashboard/rewards",
-    icon: Search,
-  },
-  {
-    title: "Leaderboard",
-    url: "/citizen-dashboard/leaderboard",
-    icon: Trophy,
-}
-]
-
-const AgencyLabels = [
-  {
-    title: "Home",
-    url: `/agency-dashboard/${currentUser}`,
-    icon: Home,
-  },
-  {
-    title: "Requests",
-    url: `/agency-dashboard/${currentUser}/requests`,
-    icon: Mail,
-  },
-  {
-    title: "Volunteers",
-    url: `/agency-dashboard/${currentUser}/volunteers`,
-    icon: Users,
-  },
-  {
-    title: "Notifications",
-    url: `/agency-dashboard/${currentUser}/notifications`,
-    icon: Bell,
-  },
-  {
-    title: "Leaderboard",
-    url: `/agency-dashboard/${currentUser}/leaderboard`,
-    icon: Trophy,
-  },
-]
-
-const VolunteerLabels = [
+export function AppSidebar() {
+  const CitizenLabels = [
     {
       title: "Home",
-      url: "/volunteer-dashboard",
+      url: "/citizen-dashboard",
       icon: Home,
     },
     {
-      title: "Tasks",
-      url: "/volunteer-dashboard/tasks",
-      icon: Mail,
-    },
-    {
-      title: "Status",
-      url: "/volunteer-dashboard/status",
-      icon: Calendar,
+      title: "Report",
+      url: "/citizen-dashboard/report",
+      icon: Inbox,
     },
     {
       title: "Notifications",
-      url: "/volunteer-dashboard/notifications",
-      icon: Search,
-    }, 
+      url: "/citizen-dashboard/notifications",
+      icon: Calendar,
+    },
     {
-        title: "Leaderboard",
-        url: "/volunteer-dashboard/leaderboard",
-        icon: Trophy,
-    }
-]
-
-const settings = {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-}
-
-export function AppSidebar() {
+      title: "Rewards",
+      url: "/citizen-dashboard/rewards",
+      icon: Search,
+    },
+    {
+      title: "Leaderboard",
+      url: "/citizen-dashboard/leaderboard",
+      icon: Trophy,
+  }
+  ]
+  
+  const AgencyLabels = [
+    {
+      title: "Home",
+      url: `/agency-dashboard/${currentUser}`,
+      icon: Home,
+    },
+    {
+      title: "Requests",
+      url: `/agency-dashboard/${currentUser}/requests`,
+      icon: Mail,
+    },
+    {
+      title: "Volunteers",
+      url: `/agency-dashboard/${currentUser}/volunteers`,
+      icon: Users,
+    },
+    {
+      title: "Notifications",
+      url: `/agency-dashboard/${currentUser}/notifications`,
+      icon: Bell,
+    },
+    {
+      title: "Leaderboard",
+      url: `/agency-dashboard/${currentUser}/leaderboard`,
+      icon: Trophy,
+    },
+  ]
+  
+  const VolunteerLabels = [
+      {
+        title: "Home",
+        url: `/${agencyId}/volunteer-dashboard`,
+        icon: Home,
+      },
+      {
+        title: "Tasks",
+        url: `/${agencyId}/volunteer-dashboard/tasks`,
+        icon: Mail,
+      },
+      {
+        title: "Status",
+        url: `/${agencyId}/volunteer-dashboard/status`,
+        icon: Calendar,
+      },
+      {
+        title: "Notifications",
+        url: `/${agencyId}/volunteer-dashboard/notifications`,
+        icon: Search,
+      }, 
+      {
+          title: "Leaderboard",
+          url: `/${agencyId}/volunteer-dashboard/leaderboard`,
+          icon: Trophy,
+      }
+  ]
+  
+  const settings = {
+      title: "Settings",
+      url: "/citizen-dashboard/settings",
+      icon: Settings,
+  }
+  
+  const agencySettings = {
+      title: "Settings",
+      url: "/agency-dashboard/settings",
+      icon: Settings,
+  }
+  
+  const volunteerSettings = {
+      title: "Settings",
+      url: `/${agencyId}/volunteer-dashboard/settings`,
+      icon: Settings,
+  }
+  
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -127,7 +139,8 @@ export function AppSidebar() {
                     AgencyLabels : pathName.includes("citizen-dashboard") ? 
                         CitizenLabels : VolunteerLabels;
 
-  
+  const parts = pathName.split("/");
+  agencyId = parts[1];
 
   return (
     <Sidebar collapsible="icon">

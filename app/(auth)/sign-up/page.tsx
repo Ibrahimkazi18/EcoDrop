@@ -17,14 +17,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"; 
 import { useToast } from "@/hooks/use-toast"; 
-import { Agency, Citizen, Role, User } from "@/types-db"; 
-import { setDoc, doc, collection, query, where, getDocs } from "firebase/firestore";
+import { Agency, Citizen, Role, User, Volunteer } from "@/types-db"; 
+import { setDoc, doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase"; 
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [agencyId, setAgencyId] = useState<string>("");
   const [role, setRole] = useState<Role | "">(""); 
   const [error, setError] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false); 
@@ -43,6 +44,28 @@ export default function SignUp() {
     const date = new Date();
   
     try {
+        if(role === "volunteer"){
+          const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+            const emailQuery = query(volunteerRef, where("email", "==", email));
+            const volunteerSnapshot = await getDocs(emailQuery);
+
+            if(!volunteerSnapshot.empty){
+              const volunteerDocRef = volunteerSnapshot.docs[0].ref;
+              const volunteerData = volunteerSnapshot.docs[0].data() as Volunteer;
+
+              if(volunteerData.username !== username){
+                setError("Email is registered but the username does not match. Please check your details.");
+                return;
+              }
+
+              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0});
+            }
+            else {
+              setError("This email is not registered under the specified agency. Contact the agency for access.");
+              return;
+            }
+        }
+
         // Check if the email is already in use with a different role
         const usersRef = collection(db, "users");
         const emailQuery = query(usersRef, where("email", "==", email));
@@ -70,7 +93,7 @@ export default function SignUp() {
         const userId = userCredential.user.uid; // Get the user ID from the created user
 
         // Create user data object
-        const userData: User = { id: userId, email, username: username, role, createdAt: date };
+        const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, createdAt: date };
 
         // Store user data in Firestore
         await setDoc(doc(db, "users", userId), userData);
@@ -78,10 +101,12 @@ export default function SignUp() {
         if (role === "citizen") {
             const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, communityIds: [""] };
             await setDoc(doc(db, "citizens", userId), citizenData);
+
         } else if (role === "agency") {
             const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, agencyName: "", contactInfo: { phone: "", address: "" }, volunteers: [""], ratings: [] };
             await setDoc(doc(db, "agencies", userId), agencyData);
-        }
+
+        } 
 
         // Use sessionStorage only on client-side
         sessionStorage.setItem("user", "true");
@@ -96,7 +121,10 @@ export default function SignUp() {
             router.push("/agency-dashboard");
         } else if (role === "citizen") {
             router.push("/citizen-dashboard");
+        } else if (role === "volunteer") {
+            router.push(`/${agencyId}/volunteer-dashboard`);
         }
+  
 
     } catch (err: any) {
         setError(err.message);
@@ -160,6 +188,24 @@ export default function SignUp() {
                 className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
               />
             </div>
+
+            {role === "volunteer" ? 
+              <div>
+                <Label htmlFor="agencyId">AgencyId</Label>
+                <Input
+                  id="agencyId"
+                  name="agencyId"
+                  type="agencyId"
+                  autoComplete="current-agencyId"
+                  required
+                  value={agencyId}
+                  onChange={(e) => setAgencyId(e.target.value)}
+                  placeholder="AgencyId"
+                  className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
+                />
+              </div> : 
+              (<></>)}
+
             <div>
               <Label htmlFor="role">Select Role</Label>
               <Select onValueChange={(value) => setRole(value as Role)} required>
@@ -171,6 +217,7 @@ export default function SignUp() {
                     <SelectLabel>Roles</SelectLabel>
                     <SelectItem value="citizen">Citizen</SelectItem>
                     <SelectItem value="agency">Agency</SelectItem>
+                    <SelectItem value="volunteer">Volunteer</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

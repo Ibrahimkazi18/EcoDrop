@@ -58,6 +58,14 @@ export default function SignIn() {
         router.push("/agency-dashboard");
       } else if (userRole === "citizen") {
         router.push("/citizen-dashboard");
+      } else if (userRole === "volunteer") {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if(userDoc.exists()){
+          const agencyId = userDoc.data().agencyId;
+          router.push(`/${agencyId}/volunteer-dashboard`);
+        }
       }
 
       toast({

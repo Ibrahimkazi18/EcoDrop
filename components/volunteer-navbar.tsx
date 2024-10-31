@@ -43,11 +43,11 @@ export default function VolunteerNavbar() {
         </div>
         <div className="relative">
           <Bell className="h-5 w-5 text-gray-500" />
-          <span className="absolute top-0 right-0 h-2 w-2 bg-red-600 rounded-full" />
+          {/* <span className="absolute top-0 right-0 h-2 w-2 bg-red-600 rounded-full" /> */}
         </div>
         <div className="flex items-center space-x-1">
           <Coins color="green" />
-          <span className="text-green-600">100</span> {/* Replace with dynamic points */}
+          <span className="text-green-600">0</span> {/* Replace with dynamic points */}
         </div>
         <Button variant="outline" onClick={handleSignOut}>
           <LogOut className="h-5 w-5" />
