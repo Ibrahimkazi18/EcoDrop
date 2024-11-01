@@ -3,22 +3,6 @@ import { db } from "@/lib/firebase";
 import { addDoc, collection, doc, getDocs, updateDoc } from "firebase/firestore"; 
 import { getAuth } from "firebase-admin/auth";
 
-export async function GET(req: Request) {
-  try {
-    console.log("fetching");
-    const volunteersSnapshot = await getDocs(collection(db, 'volunteers'));
-    console.log("fetched data: ", volunteersSnapshot)
-    const volunteers = volunteersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return NextResponse.json(volunteers);
-  } catch (error) {
-    console.error('Error fetching volunteers:',  error);
-    return NextResponse.json({ error: 'Failed to fetch volunteers' }, { status: 500 });
-  }
-}
-
 export const  POST = async (req: Request) => {
   try {
     const body = await req.json();

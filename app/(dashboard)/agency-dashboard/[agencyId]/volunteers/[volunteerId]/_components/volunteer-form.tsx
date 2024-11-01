@@ -15,9 +15,8 @@ import { Input } from "@/components/ui/input"
 import axios from "axios"
 import toast from "react-hot-toast"
 import { AlertModal } from "@/components/modal/alert-modal"
-import { auth, db } from "@/lib/firebase"
-import { useAuthState } from "react-firebase-hooks/auth"
-import { addDoc, collection } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { addDoc, arrayUnion, collection, doc, updateDoc } from "firebase/firestore"
 
 interface VolunteerFormProps {
   initialData: Volunteer
@@ -28,6 +27,7 @@ const formSchema = z.object({
   username: z.string().min(1),
   email: z.string().min(1),
   agencyId: z.string().min(1),
+  date: z.date()
 })
 
 const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
@@ -48,17 +48,29 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
   console.log(agencyId);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log("ehllo"); 
     try {
       setIsLoading(true);
+      
+      data = {
+        ...data,
+        date: new Date()
+      }
 
       const addVolunteer = async (agencyId: string, volunteerData: any) => {
         try {
-            // Reference the agency's volunteer sub-collection path
             const volunteersRef = collection(db, `agencies/${agencyId}/volunteers`);
+
+            const volunteerDoc = await addDoc(volunteersRef, volunteerData);
+
+            const volunteerId = volunteerDoc.id;
+
             
-            // Add the volunteer document to the sub-collection
-            await addDoc(volunteersRef, volunteerData);
+            // Update the volunteers array in the agency document
+            const agencyDocRef = doc(db, "agencies", agencyId);
+            
+            await updateDoc(agencyDocRef, {
+              volunteers: arrayUnion(volunteerId)
+            });
     
             console.log("Volunteer added successfully!");
           } catch (error) {

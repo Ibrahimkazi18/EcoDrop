@@ -18,8 +18,7 @@ import { useEffect, useState } from "react"
 import UserGreeting from "./user-greeting"
 import { auth } from "@/lib/firebase"
 
-// Menu CitizenLabels.
-const currentUser = auth.currentUser?.uid ? auth.currentUser?.uid : "nouserid"
+const currentUser = auth.currentUser?.uid ? auth.currentUser.uid : "nouserid"
 let agencyId : string;
 
 export function AppSidebar() {
@@ -54,7 +53,7 @@ export function AppSidebar() {
   const AgencyLabels = [
     {
       title: "Home",
-      url: `/agency-dashboard/${currentUser}`,
+      url: `/agency-dashboard`,
       icon: Home,
     },
     {

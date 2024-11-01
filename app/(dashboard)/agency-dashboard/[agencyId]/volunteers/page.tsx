@@ -52,7 +52,6 @@ const ProductsPage = ({params} : {params : {agencyId : string}}) => {
     username: item.username,
     email: item.email,
     status: item.status,
-    temporaryPassword: item.temporaryPassword,
     hasSetPermanentPassword: item.hasSetPermanentPassword,
     createdAt: item.createdAt ? format(new Date(item.createdAt), "MMMM do, yyyy") : "",
   }));

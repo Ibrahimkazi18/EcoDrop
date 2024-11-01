@@ -20,12 +20,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Agency, Citizen, Role, User, Volunteer } from "@/types-db"; 
 import { setDoc, doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase"; 
+import { FaEye, FaEyeSlash } from "react-icons/fa"
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [agencyId, setAgencyId] = useState<string>("");
+  const [contact, setContact] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role | "">(""); 
   const [error, setError] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false); 
@@ -35,6 +39,10 @@ export default function SignUp() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   if (!isMounted) return null;
 
@@ -103,7 +111,7 @@ export default function SignUp() {
             await setDoc(doc(db, "citizens", userId), citizenData);
 
         } else if (role === "agency") {
-            const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, agencyName: "", contactInfo: { phone: "", address: "" }, volunteers: [""], ratings: [] };
+            const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, contactInfo: { phone: contact, address: address }, volunteers: [""], ratings: [] };
             await setDoc(doc(db, "agencies", userId), agencyData);
 
         } 
@@ -135,7 +143,6 @@ export default function SignUp() {
     }
 };
 
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -148,7 +155,7 @@ export default function SignUp() {
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-neutral-700">{role === "agency" ? "Agency Name" : "Username"}</Label>
               <Input
                 id="username"
                 name="username"
@@ -156,12 +163,12 @@ export default function SignUp() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
+                placeholder={role === "agency" ? "Agency Name" : "Username"}
                 className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
               />
             </div>
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email" className="text-neutral-700">Email address</Label>
               <Input
                 id="email"
                 name="email"
@@ -174,24 +181,68 @@ export default function SignUp() {
                 className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
               />
             </div>
+
+            {role === "agency" ? 
+              <div>
+                <Label htmlFor="contact" className="text-neutral-700">Contact</Label>
+                <Input
+                  id="contact"
+                  name="contact"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder="10 Digit Phone Number"
+                  className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
+                />
+              </div> : 
+              (<></>)}
+
+            {role === "agency" ? 
+              <div>
+                <Label htmlFor="address" className="text-neutral-700">Address</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  type="text"
+                  autoComplete="street-address"
+                  required
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Address"
+                  className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
+                />
+              </div> : 
+              (<></>)}
             <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
-              />
+              <Label htmlFor="password" className="text-neutral-700">Password</Label>
+              <div className="flex">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="border-gray-900 p-[10px] z-10 w-full mr-2 bg-white text-black text-base focus:border-[#0070f3] focus:outline-none pr-10"
+                />
+                <Button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="flex items-center text-neutral-700 bg-transparent focus:outline-none hover:bg-slate-700 hover:text-white"
+                  style={{ padding: '0 8px' }}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}  
+                </Button>
+              </div>
             </div>
 
             {role === "volunteer" ? 
               <div>
-                <Label htmlFor="agencyId">AgencyId</Label>
+                <Label htmlFor="agencyId" className="text-neutral-700">AgencyId</Label>
                 <Input
                   id="agencyId"
                   name="agencyId"
@@ -207,7 +258,7 @@ export default function SignUp() {
               (<></>)}
 
             <div>
-              <Label htmlFor="role">Select Role</Label>
+              <Label htmlFor="role" className="text-neutral-700">Select Role</Label>
               <Select onValueChange={(value) => setRole(value as Role)} required>
                 <SelectTrigger className="w-full bg-black">
                   <SelectValue placeholder="Select a role" />

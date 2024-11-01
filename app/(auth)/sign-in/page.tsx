@@ -10,31 +10,36 @@ import { Input } from "@/components/ui/input"; // Import ShadCN Input
 import { Label } from "@/components/ui/label"; // Import ShadCN Label
 import { FcGoogle } from "react-icons/fc";
 import { doc, getDoc } from "firebase/firestore";
+import { FaEye, FaEyeSlash } from "react-icons/fa"
 
 export default function SignIn() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  // Function to fetch user role from Firestore (implement this)
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  // Function to fetch user role from Firestore 
   const fetchUserRole = async (userId: string): Promise<string> => {
-    // Reference to the Firestore database (ensure you have initialized your Firestore)
-    const userDocRef = doc(db, "users", userId); // Correctly reference the user document
+    const userDocRef = doc(db, "users", userId);
   
     try {
-      const userDoc = await getDoc(userDocRef); // Fetch the user document
+      const userDoc = await getDoc(userDocRef); 
   
       if (userDoc.exists()) {
-        return userDoc.data()?.role || "unknown"; // Return role if it exists
+        return userDoc.data()?.role || "unknown"; 
       } else {
         console.log("No such document!");
-        return "unknown"; // Handle the case where the document does not exist
+        return "unknown"; 
       }
     } catch (error) {
       console.error("Error fetching user role:", error);
-      return "unknown"; // Return a default value in case of an error
+      return "unknown"; 
     }
   };
 
@@ -48,20 +53,23 @@ export default function SignIn() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Fetch user role from Firestore (you need to implement this function)
       const userRole = await fetchUserRole(user.uid);
 
       sessionStorage.setItem("user", "true");
 
-      // Navigate to dashboard based on role
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
       if (userRole === "agency") {
-        router.push("/agency-dashboard");
+        if(userDoc.exists()){
+          const agencyId = userDoc.data().agencyId;
+          router.push(`/agency-dashboard/${agencyId}`);
+        }
       } else if (userRole === "citizen") {
         router.push("/citizen-dashboard");
+
       } else if (userRole === "volunteer") {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        
+      
         if(userDoc.exists()){
           const agencyId = userDoc.data().agencyId;
           router.push(`/${agencyId}/volunteer-dashboard`);
@@ -139,18 +147,28 @@ export default function SignIn() {
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
-              />
+              <Label htmlFor="password" className="text-neutral-700">Password</Label>
+              <div className="flex">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="border-gray-900 p-[10px] z-10 w-full mr-2 bg-white text-black text-base focus:border-[#0070f3] focus:outline-none pr-10"
+                />
+                <Button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="flex items-center text-neutral-700 bg-transparent focus:outline-none hover:bg-slate-700 hover:text-white"
+                  style={{ padding: '0 8px' }}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}  
+                </Button>
+              </div>
             </div>
           </div>
           <div className="space-y-4">
