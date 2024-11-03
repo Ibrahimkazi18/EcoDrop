@@ -34,7 +34,6 @@ export interface Volunteer extends User {
 // Agency Interface
 export interface Agency extends User {
   role: "agency";
-  agencyName: string;
   contactInfo: {
     phone: string;
     address: string;

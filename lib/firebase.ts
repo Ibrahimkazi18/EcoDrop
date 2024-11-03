@@ -4,6 +4,7 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { getStorage } from "firebase/storage"
 import { getFirestore } from "firebase/firestore"
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -37,8 +38,10 @@ export const signInWithGoogle = async () => {
   }
 }
 
+const functions = getFunctions(app);
+
 export const signOutUser = async () => {
   await signOut(auth);
 }
 
-export { db, storage, auth }
+export { db, storage, auth, functions }

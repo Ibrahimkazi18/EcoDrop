@@ -4,7 +4,7 @@ import { Volunteer } from "@/types-db";
 import { VolunteerColumn } from "./components/columns";
 import ProductClient from "./components/client";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 const ProductsPage = ({params} : {params : {agencyId : string}}) => {
@@ -47,13 +47,21 @@ const ProductsPage = ({params} : {params : {agencyId : string}}) => {
 
   if (loading) return <p>Loading volunteers...</p>;
 
+  const formatDate = (date : Timestamp) => {
+    const newDate = date.toDate();
+
+    const formatted = `${newDate.getDate()}-${newDate.getMonth()}-${newDate.getFullYear()}`
+
+    return formatted;
+  }
+
   const formattedProducts: VolunteerColumn[] = volunteers.map((item) => ({
     id: item.id,
     username: item.username,
     email: item.email,
     status: item.status,
     hasSetPermanentPassword: item.hasSetPermanentPassword,
-    createdAt: item.createdAt ? format(new Date(item.createdAt), "MMMM do, yyyy") : "",
+    createdAt: item.createdAt instanceof Timestamp ? formatDate(item.createdAt) : "",
   }));
 
   return (

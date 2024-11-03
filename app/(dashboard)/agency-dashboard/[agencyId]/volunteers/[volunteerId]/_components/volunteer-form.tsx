@@ -7,14 +7,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Volunteer } from "@/types-db"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Trash } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Input } from "@/components/ui/input"
-import axios from "axios"
 import toast from "react-hot-toast"
-import { AlertModal } from "@/components/modal/alert-modal"
 import { db } from "@/lib/firebase"
 import { addDoc, arrayUnion, collection, doc, updateDoc } from "firebase/firestore"
 
@@ -27,8 +25,10 @@ const formSchema = z.object({
   username: z.string().min(1),
   email: z.string().min(1),
   agencyId: z.string().min(1),
-  date: z.date()
+  createdAt: z.date().optional(),
 })
+
+const newDate = new Date();
 
 const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,23 +38,22 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const params = useParams();
   const router = useRouter();
 
   const title = initialData ? "Edit Volunteer" : "Create Volunteer";
   const description = initialData ? "Edit a Volunteer" : "Add a new Volunteer";
   const toastMessage = initialData ? "Volunteer Updated" : "Volunteer Created";
   const action = initialData ? "Save Changes" : "Create Volunteer";
-  console.log(agencyId);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      console.log("submitting")
+      console.log(agencyId)
       setIsLoading(true);
-      
-      data = {
-        ...data,
-        date: new Date()
-      }
+
+      data.createdAt = new Date();
+
+      console.log("before definition")
 
       const addVolunteer = async (agencyId: string, volunteerData: any) => {
         try {
@@ -78,7 +77,9 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
           }
       };        
 
+      console.log("before await")
       await addVolunteer(agencyId, data);
+      console.log("after await")
 
       toast.success(toastMessage);
       router.refresh();
@@ -90,29 +91,8 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
     }
   }
 
-  const onDelete = async () => {
-    try {
-      setIsLoading(true);
-      await axios.delete(`/api/volunteeradd/${params.volunteerId}`);
-      toast.success("Volunteer Removed");
-      router.refresh();
-      router.push(`/agency-dashboard/${agencyId}/volunteers`);
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
-      setIsLoading(false);
-      setOpen(false);
-    }
-  }
-
   return (
     <>
-      <AlertModal
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        onConfirm={onDelete}
-        loading={isLoading}
-      />
 
       <div className="flex items-center justify-center">
         <Heading title={title} description={description} />
@@ -157,11 +137,26 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
             <FormField
               control={form.control}
               name="agencyId"
+              defaultValue={agencyId}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>AgencyId</FormLabel>
                   <FormControl>
                     <Input disabled={isLoading} {...field} value={agencyId}/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="createdAt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Created At</FormLabel>
+                  <FormControl>
+                    <Input disabled={true} {...field} value={`${newDate.getDate()}-${newDate.getMonth()}-${newDate.getFullYear()}`}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
