@@ -188,10 +188,6 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
     }
   };  
 
-  const handleFileSubmit = async () => {
-    setIsLoading(true);
-  };
-
   return (
     <>
 

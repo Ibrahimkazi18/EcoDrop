@@ -66,12 +66,12 @@ const CellAction = ({ data } : CellActionProps) => {
           await deleteDoc(volunteerDocRef);
           console.log(data.id);
 
-        //Deleting from users collection
-        await deleteDoc(doc(db, "users", volunteerId));
+          //Deleting from users collection
+          await deleteDoc(doc(db, "users", volunteerId));
 
-        //Deleting from Firebase Authentication
-        const deleteUserFunction = httpsCallable(functions, "deleteUser");
-        await deleteUserFunction({ uid: volunteerId }); 
+          //Deleting from Firebase Authentication
+          const deleteUserFunction = httpsCallable(functions, "deleteUser");
+          await deleteUserFunction({ uid: volunteerId }); 
       }
 
       toast.success("Volunteer Removed")

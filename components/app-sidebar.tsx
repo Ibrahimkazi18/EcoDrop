@@ -17,9 +17,11 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import UserGreeting from "./user-greeting"
 import { auth } from "@/lib/firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import useAuthStore from "@/store/authStore"
 
-const currentUser = auth.currentUser?.uid ? auth.currentUser.uid : "nouserid"
-let agencyId : string;
+// const currentUser = auth.currentUser?.uid ? auth.currentUser.uid : "nouserid"
+// let agencyId : string;
 
 export function AppSidebar() {
   const CitizenLabels = [
@@ -30,17 +32,17 @@ export function AppSidebar() {
     },
     {
       title: "Report",
-      url: "/citizen-dashboard/report",
+      url: "/citizen-dashboard/{citizenId}/report",
       icon: Inbox,
     },
     {
       title: "Notifications",
-      url: "/citizen-dashboard/notifications",
+      url: "/citizen-dashboard/{citizenId}/notifications",
       icon: Calendar,
     },
     {
       title: "Rewards",
-      url: "/citizen-dashboard/rewards",
+      url: "/citizen-dashboard/{citizenId}/rewards",
       icon: Search,
     },
     {
@@ -53,27 +55,27 @@ export function AppSidebar() {
   const AgencyLabels = [
     {
       title: "Home",
-      url: `/agency-dashboard`,
+      url: `/agency-dashboard/{agencyId}`,
       icon: Home,
     },
     {
       title: "Requests",
-      url: `/agency-dashboard/${currentUser}/requests`,
+      url: `/agency-dashboard/{agencyId}/requests`,
       icon: Mail,
     },
     {
       title: "Volunteers",
-      url: `/agency-dashboard/${currentUser}/volunteers`,
+      url: `/agency-dashboard/{agencyId}/volunteers`,
       icon: Users,
     },
     {
       title: "Notifications",
-      url: `/agency-dashboard/${currentUser}/notifications`,
+      url: `/agency-dashboard/{agencyId}/notifications`,
       icon: Bell,
     },
     {
       title: "Leaderboard",
-      url: `/agency-dashboard/${currentUser}/leaderboard`,
+      url: `/agency-dashboard/{agencyId}/leaderboard`,
       icon: Trophy,
     },
   ]
@@ -81,27 +83,27 @@ export function AppSidebar() {
   const VolunteerLabels = [
       {
         title: "Home",
-        url: `/${agencyId}/volunteer-dashboard`,
+        url: `/{agencyId}/volunteer-dashboard`,
         icon: Home,
       },
       {
         title: "Tasks",
-        url: `/${agencyId}/volunteer-dashboard/tasks`,
+        url: `/{agencyId}/volunteer-dashboard/tasks`,
         icon: Mail,
       },
       {
         title: "Status",
-        url: `/${agencyId}/volunteer-dashboard/status`,
+        url: `/{agencyId}/volunteer-dashboard/status`,
         icon: Calendar,
       },
       {
         title: "Notifications",
-        url: `/${agencyId}/volunteer-dashboard/notifications`,
+        url: `/{agencyId}/volunteer-dashboard/notifications`,
         icon: Search,
       }, 
       {
           title: "Leaderboard",
-          url: `/${agencyId}/volunteer-dashboard/leaderboard`,
+          url: `/{agencyId}/volunteer-dashboard/leaderboard`,
           icon: Trophy,
       }
   ]
@@ -120,11 +122,45 @@ export function AppSidebar() {
   
   const volunteerSettings = {
       title: "Settings",
-      url: `/${agencyId}/volunteer-dashboard/settings`,
+      url: `/{agencyId}/volunteer-dashboard/settings`,
       icon: Settings,
   }
   
+
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [citizenId, setCitizenId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const pathName = usePathname();
+  const setAuthData = useAuthStore((state) => state.setAuthData);
+
+  useEffect(() => {
+   
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user.uid);
+
+        const parts = pathName.split("/");
+        if (pathName.includes("agency-dashboard") && parts[2]) {
+          setAgencyId(parts[2]);
+        } else if (pathName.includes("volunteer-dashboard") && parts[1]) {
+          setAgencyId(parts[1]);
+        } else {
+          setAgencyId(null);
+          setCitizenId(user.uid);
+        }
+
+        setAuthData(user.uid, agencyId);
+      } else {
+        setCurrentUser(null);
+        setAgencyId(null);
+      }
+    });
+
+    setIsMounted(true);
+
+    return () => unsubscribe();
+  }, [pathName]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -132,14 +168,29 @@ export function AppSidebar() {
 
   if(!isMounted) return null;
 
-  const pathName = usePathname();
+  const items = pathName.includes("agency-dashboard")
+    ? AgencyLabels.map((label) => ({
+        ...label,
+        url: label.url.replace("{agencyId}", agencyId || "nouserid"),
+      }))
+    : pathName.includes("citizen-dashboard")
+    ? CitizenLabels.map((label) => ({
+        ...label,
+        url: label.url.replace("{citizenId}", citizenId || "nouserid")
+     }))
+    : VolunteerLabels.map((label) => ({
+        ...label,
+        url: label.url.replace("{agencyId}", agencyId || "nouserid"),
+      }));
 
-  const items = pathName.includes("agency-dashboard") ? 
-                    AgencyLabels : pathName.includes("citizen-dashboard") ? 
-                        CitizenLabels : VolunteerLabels;
+  // const pathName = usePathname();
 
-  const parts = pathName.split("/");
-  agencyId = parts[1];
+  // const items = pathName.includes("agency-dashboard") ? 
+  //                   AgencyLabels : pathName.includes("citizen-dashboard") ? 
+  //                       CitizenLabels : VolunteerLabels;
+
+  // const parts = pathName.split("/");
+  // agencyId = parts[1];
 
   return (
     <Sidebar collapsible="icon">

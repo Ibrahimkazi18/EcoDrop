@@ -25,21 +25,26 @@ export default function SignIn() {
   };
 
   // Function to fetch user role from Firestore 
-  const fetchUserRole = async (userId: string): Promise<string> => {
+  const fetchUserRole = async (userId: string): Promise<{ role: string; agencyId?: string }> => {
     const userDocRef = doc(db, "users", userId);
   
     try {
       const userDoc = await getDoc(userDocRef); 
   
       if (userDoc.exists()) {
-        return userDoc.data()?.role || "unknown"; 
+        const data = userDoc.data();
+
+        return {
+          role : data?.role || "unknown",
+          agencyId : data?.agencyId ? data.agencyId : data.id || undefined
+        }
       } else {
         console.log("No such document!");
-        return "unknown"; 
+        return { role: "unknown" };
       }
     } catch (error) {
       console.error("Error fetching user role:", error);
-      return "unknown"; 
+      return { role: "unknown" };
     }
   };
 
@@ -53,27 +58,26 @@ export default function SignIn() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const userRole = await fetchUserRole(user.uid);
+      const { role: userRole, agencyId } = await fetchUserRole(user.uid);
 
       sessionStorage.setItem("user", "true");
-
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
       
       if (userRole === "agency") {
-        if(userDoc.exists()){
-          const agencyId = userDoc.data().agencyId;
+        if (agencyId) {
           router.push(`/agency-dashboard/${agencyId}`);
+        } else {
+          throw new Error("Agency ID not found");
         }
       } else if (userRole === "citizen") {
         router.push("/citizen-dashboard");
-
       } else if (userRole === "volunteer") {
-      
-        if(userDoc.exists()){
-          const agencyId = userDoc.data().agencyId;
+        if (agencyId) {
           router.push(`/${agencyId}/volunteer-dashboard`);
+        } else {
+          throw new Error("Agency ID not found");
         }
+      } else {
+        throw new Error("Invalid role");
       }
 
       toast({
@@ -96,7 +100,7 @@ export default function SignIn() {
       const user = result.user;
 
       // Fetch user role from Firestore
-      const userRole = await fetchUserRole(user.uid);
+      const { role: userRole, agencyId } = await fetchUserRole(user.uid);
 
       sessionStorage.setItem("user", "true");
 
