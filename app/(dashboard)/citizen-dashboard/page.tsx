@@ -1,5 +1,6 @@
 "use client"
 
+import TestApiKey from "@/components/testApi";
 import { useEffect, useState } from "react";
 
 const DashboardPage = () => {
@@ -15,6 +16,7 @@ const DashboardPage = () => {
   return (
     <div>
       Hello
+      <TestApiKey />
     </div>
   )
 }

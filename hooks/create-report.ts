@@ -1,15 +1,41 @@
 import { db } from "@/lib/firebase";
 import { addDoc, collection, doc, getDoc, getDocs, limit, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+export async function uploadImage(file: File | Blob, folder: string): Promise<string> {
+  try {
+    const storage = getStorage();
+    const fileName = file instanceof File ? file.name : `blob_${Date.now()}.png`
+    const storageRef = ref(storage, `${folder}/${Date.now()}_${fileName}`);
+
+    // Uploading in firestore storage
+    await uploadBytes(storageRef, file);
+
+    const downloadURL = await getDownloadURL(storageRef);
+
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw new Error("Failed to upload image");
+  }
+}
+
 
 export async function createReport (
     userId: string,
     location: string,
     wasteType: string,
     amount: string,
-    imageUrl ?: string,
+    imageFile?: File | Blob,
     verificationResult ?: any
 ) {
     try {
+      let imageUrl = null;
+
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile, "reports");
+      }
+
         const reportRef = await addDoc(collection(db, "reports"), {
             userId,
             location,
@@ -20,6 +46,8 @@ export async function createReport (
             status : "pending",
             createdAt: Timestamp.fromDate(new Date()), // Add the timestamp of the report creation
           });
+
+          const reportDoc = await getDoc(reportRef);
       
           console.log("Report created with ID:", reportRef.id);
           
@@ -31,7 +59,10 @@ export async function createReport (
 
           const notification = await createNotification(userId, `You've earned ${pointsEarned} points points for reporting waste!`, "reward");
 
-          return reportRef.id;
+          return {
+            id: reportDoc.id,
+            ...reportDoc.data(),
+          };
     } catch (error) {
         console.error("Error creating report:", error);
         throw new Error("Failed to create report");
