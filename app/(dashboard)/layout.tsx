@@ -14,13 +14,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <SidebarProvider suppressHydrationWarning>
-          <AppSidebar/>
-          <div>
-            <DashboardClient>
-              <Navbar />
-              {children}
-            </DashboardClient>
-          </div>
+            <AppSidebar/>
+            <div>
+              <DashboardClient>
+                <Navbar />
+                {children}
+              </DashboardClient>
+            </div>
       </SidebarProvider>
   );
 };

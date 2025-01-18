@@ -52,3 +52,24 @@ export interface EWasteRequest {
   completionProofUrl?: string;    // URL of the image after cleaning
   pointsAwarded: number;
 }
+
+export interface Notification {
+  id: string;
+  isRead: boolean;
+  message: string;
+  type: string
+  createdAt: Date;
+  userId: string;
+}
+
+export interface ReportType {
+  id: string;
+  userId: string,
+  location: string,
+  wasteType: string,
+  amount: string,
+  imageUrl: string,
+  verificationResult: string,
+  status : string,
+  createdAt: Date | Timestamp
+}

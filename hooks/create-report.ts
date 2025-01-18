@@ -1,4 +1,5 @@
 import { db } from "@/lib/firebase";
+import { ReportType } from "@/types-db";
 import { addDoc, collection, doc, getDoc, getDocs, limit, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -43,7 +44,7 @@ export async function createReport (
             amount,
             imageUrl,
             verificationResult,
-            status : "pending",
+            status : "Pending",
             createdAt: Timestamp.fromDate(new Date()), // Add the timestamp of the report creation
           });
 
@@ -161,7 +162,7 @@ export async function getReportsCitizen(userId: string, limitCount:number=10) {
         const reports = querySnapshot.docs.map((doc) => ({
           id: doc.id, 
           ...doc.data(), 
-        }));
+        })) as ReportType[];
     
         return reports;
 

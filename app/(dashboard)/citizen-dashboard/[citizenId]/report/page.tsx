@@ -7,18 +7,22 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { createReport, getReportsCitizen } from "@/hooks/create-report";
-import useAuthStore from "@/store/authStore";
 import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
+import { Separator } from "@/components/ui/separator";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { User } from "@/types-db";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
 const ReportPage = () => {
   const router = useRouter();   
-  const userId = useAuthStore((state) => state.userId);
+  const userId = auth.currentUser?.uid;
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   
@@ -28,10 +32,11 @@ const ReportPage = () => {
 
   const [reports, setReports] = useState<
     Array<{
-        id: number;
+        id: string;
         location: string;
         wasteType: string;
         amount: string;
+        status: string;
         createdAt: string;
     }>
   >([]);
@@ -239,6 +244,7 @@ const ReportPage = () => {
                 location : report.location,
                 wasteType : report.wasteType,
                 amount : report.amount,
+                status: report.status,
                 createdAt: report.createdAt.toDate().toISOString().split("T")[0],
             }
 
@@ -260,23 +266,51 @@ const ReportPage = () => {
   }
 
   useEffect(() => {
-    const getReports = async () => {
-        if(userId) {
-            const reports = await getReportsCitizen(userId, 5) as any;
+    const fetchReports = async (userId : string) => {
+      try {
+        const reportsData = await getReportsCitizen(userId, 5); 
+        const formattedReports = reportsData.map((report) => ({
+          ...report,
+          createdAt: report.createdAt instanceof Date
+          ? report.createdAt.toISOString().split("T")[0]
+          : new Date(report.createdAt.seconds * 1000).toISOString().split("T")[0]
+        }));
+        setReports(formattedReports);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+      }
+    };
 
-            const formattedReports = reports.map((report : any) => ({
-                ...report,
-                createdAt: report.createdAt.toISOString().split('T')[0]
-            }))
+    const fetchUserData = async (uid: string) => {
+      try {
+        const userDocRef = doc(db, "citizens", uid);
+        const userDoc = await getDoc(userDocRef);
 
-            setReports(formattedReports);
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as User;
+          setUser({ ...userData }); 
+          await fetchReports(uid); 
+        } else {
+          console.error("User document does not exist.");
         }
-        else {
-            console.error("Not logged in ", userId);
-        }
-    }
-    getReports();
-  }, [router])
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
+        fetchUserData(firebaseUser.uid);
+      } else {
+        setUser(null);
+        setReports([]);
+        console.error("User not logged in.");
+      }
+    });
+
+    return () => unsubscribe(); // Clean up the listener
+  }, []);
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -432,6 +466,53 @@ const ReportPage = () => {
         </Button>
 
         </form>
+
+        <Separator className="mb-6"/>
+
+        <h2 className="text-3xl font-semibold mb-6">Your Reports</h2>
+
+        <div className="rounded-2xl shadow-lg overflow-hidden dark:shadow-gray-800">
+          <div className="max-h-98 overflow-y-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-600">
+                {reports.map((report) => (
+                  <tr key={report.id} className="hover:bg-gray-800 transition-colors duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <MapPin className="inline-block w-4 h-4 mr-2 text-green-700"/>
+                      {report.location}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {report.amount}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {report.status}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {report.createdAt}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
     </div>
   )
 }
