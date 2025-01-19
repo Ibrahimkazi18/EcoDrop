@@ -6,9 +6,6 @@ import Modal from "@/components/modal";
 import { createColumns, ReportColumn } from "./columns";
 import RequestClient from "./client";
 import { createNotification, createTask } from "@/hooks/create-report";
-import { addDoc, collection, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Timestamp } from "@google-cloud/firestore";
 import toast from "react-hot-toast";
 
 const RequestPage = ({

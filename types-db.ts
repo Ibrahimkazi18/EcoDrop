@@ -11,6 +11,7 @@ export interface User {
   username: string;
   role: Role;
   agencyId ?: string;
+  volunteerId?: string;
   createdAt: Date;
 }
 
@@ -19,6 +20,7 @@ export interface Citizen extends User {
   role: "citizen";
   points: number;              // Points earned by reporting e-waste
   communityIds: string[];      // Communities the citizen has joined
+  badResponses: number
 }
 
 // Volunteer Interface
@@ -40,6 +42,10 @@ export interface Agency extends User {
   };
   volunteers: string[];        // List of volunteer IDs associated with the agency
   ratings: number[];           // Array of ratings given by citizens
+  badResults: number;
+  isBanned: boolean;
+  banStartDate?: Timestamp;
+  banEndDate?: Timestamp;
 }
 
 // E-Waste Request Interface
@@ -71,5 +77,33 @@ export interface ReportType {
   imageUrl: string,
   verificationResult: string,
   status : string,
+  createdAt: Date | Timestamp
+}
+
+export interface taskId {
+ id: string
+ agencyId: string
+ report: ReportType
+ volunteersAssigned: [volunteerId: string]
+ volunteersAccepted: [volunteerId: string]
+ createdAt: Date | Timestamp
+ completed: boolean
+ completedBy: string
+ verificationImageUrl: string
+ citizenConfirmationStatus: "pending" | "confirmed" | "notProperlyDone"
+ citizenVerificationImageUrl: string
+ citizenVerificationDeadline: Date
+}
+
+export interface VolunteerTask {
+  id: string
+  volunteerId: string
+  status: "pending" | "accepted" | "completed" 
+}
+
+export interface Messages {
+  id: string
+  senderId: string
+  message: string
   createdAt: Date | Timestamp
 }

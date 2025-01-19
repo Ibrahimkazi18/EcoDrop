@@ -48,16 +48,18 @@ export default function SignUp() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(""); // Reset error before submission
+    setError("");
     const date = new Date();
   
     try {
         if(role === "volunteer"){
-          const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+            const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
             const emailQuery = query(volunteerRef, where("email", "==", email));
             const volunteerSnapshot = await getDocs(emailQuery);
 
             if(!volunteerSnapshot.empty){
+              const volunteerDoc = volunteerSnapshot.docs[0];
+              console.log(volunteerDoc.id)
               const volunteerDocRef = volunteerSnapshot.docs[0].ref;
               const volunteerData = volunteerSnapshot.docs[0].data() as Volunteer;
 
@@ -81,42 +83,54 @@ export default function SignUp() {
 
         // If the query finds any documents, the email is already registered
         if (!querySnapshot.empty) {
-            const existingUser = querySnapshot.docs[0].data(); // Get the first document data
+            const existingUser = querySnapshot.docs[0].data(); 
 
             // Check if the existing user's role is different from the selected role
             if (existingUser.role !== role) {
                 setError("This email is already registered under another role. Please use a different email.");
-                return; // Exit the function
+                return; 
             }
         }
 
-        // Check if a role is selected before proceeding
         if (!role) {
             setError("Please select a role before signing up.");
-            return; // Exit the function
+            return; 
         }
 
-        // Proceed to create the user with Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const userId = userCredential.user.uid; // Get the user ID from the created user
+        const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+        const q = query(volunteerRef, where("email", "==", email));
+        const volunteerSnapshot = await getDocs(q);
 
-        // Create user data object
-        const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, createdAt: date };
+        if(!volunteerSnapshot.empty && role === "volunteer"){
+          const volunteerDoc = volunteerSnapshot.docs[0];
+          console.log(volunteerDoc.id)
 
-        // Store user data in Firestore
-        await setDoc(doc(db, "users", userId), userData);
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const userId = userCredential.user.uid;
 
-        if (role === "citizen") {
-            const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, communityIds: [""] };
-            await setDoc(doc(db, "citizens", userId), citizenData);
+          const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
 
-        } else if (role === "agency") {
-            const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, contactInfo: { phone: contact, address: address }, volunteers: [""], ratings: [] };
-            await setDoc(doc(db, "agencies", userId), agencyData);
+          await setDoc(doc(db, "users", userId), userData);
+        }
 
-        } 
+        else {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const userId = userCredential.user.uid;
+  
+          const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: "",createdAt: date };
+  
+          await setDoc(doc(db, "users", userId), userData);
+  
+          if (role === "citizen") {
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, communityIds: [""], badResponses: 0 };
+              await setDoc(doc(db, "citizens", userId), citizenData);
+  
+          } else if (role === "agency") {
+              const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, contactInfo: { phone: contact, address: address }, volunteers: [""], ratings: [], badResults: 0, isBanned: false };
+              await setDoc(doc(db, "agencies", userId), agencyData);
+          } 
+        }
 
-        // Use sessionStorage only on client-side
         sessionStorage.setItem("user", "true");
 
         toast({
@@ -124,7 +138,6 @@ export default function SignUp() {
             description: `${email} signed up at ${date.toLocaleString()}`,
         });
 
-        // Navigate to the dashboard based on role
         if (role === "agency") {
             router.push("/agency-dashboard");
         } else if (role === "citizen") {

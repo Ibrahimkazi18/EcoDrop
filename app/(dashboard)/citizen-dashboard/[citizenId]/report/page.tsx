@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { MapPin, Upload, CheckCircle, Loader, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { createReport, getReportsCitizen } from "@/hooks/create-report";
 import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
@@ -16,13 +15,11 @@ import { User } from "@/types-db";
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
-const ReportPage = () => {
-  const router = useRouter();   
+const ReportPage = () => { 
   const userId = auth.currentUser?.uid;
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   
@@ -288,7 +285,6 @@ const ReportPage = () => {
 
         if (userDoc.exists()) {
           const userData = userDoc.data() as User;
-          setUser({ ...userData }); 
           await fetchReports(uid); 
         } else {
           console.error("User document does not exist.");
@@ -302,7 +298,6 @@ const ReportPage = () => {
       if (firebaseUser) {
         fetchUserData(firebaseUser.uid);
       } else {
-        setUser(null);
         setReports([]);
         console.error("User not logged in.");
       }

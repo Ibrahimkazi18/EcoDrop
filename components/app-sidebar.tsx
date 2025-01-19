@@ -131,7 +131,7 @@ export function AppSidebar() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [citizenId, setCitizenId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const pathName = usePathname();
+  const pathName = usePathname() as string;
   const setAuthData = useAuthStore((state) => state.setAuthData);
 
   useEffect(() => {
