@@ -1,5 +1,6 @@
+import { ReportColumn } from "@/app/(dashboard)/agency-dashboard/[agencyId]/requests/components/columns";
 import { db } from "@/lib/firebase";
-import { ReportType } from "@/types-db";
+import { ReportType, Volunteer } from "@/types-db";
 import { addDoc, collection, doc, getDoc, getDocs, limit, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -128,6 +129,39 @@ export async function createNotification (userId : string, message : string, typ
       }
 }
 
+export async function createTask(agencyId: string, selectedReport: ReportColumn | null, volunteers: Volunteer[]) {
+  try {
+    if (selectedReport) {
+      const reportRef = doc(db, "reports", selectedReport.id);
+      await updateDoc(reportRef, {
+        status: "assigned",
+      });
+    }
+    else {
+      console.log("No reports selected")
+    }
+
+    const taskRef = await addDoc(collection(db, "tasks"), {
+        agencyId: agencyId,
+        report: selectedReport,
+        volunteersAssigned: volunteers.map((volunteer) => volunteer.id),
+        createdAt: Timestamp.fromDate(new Date()), 
+        completed: false,
+        verificationImageUrl: "",
+        citizenConfirmationStatus: "pending",
+        citizenVerificationImageUrl: ""
+      });
+
+      const taskDoc = await getDoc(taskRef);
+  
+      console.log("task created with ID:", taskRef.id);
+
+} catch (error) {
+    console.error("Error creating task:", error);
+    throw new Error("Failed to create task");
+}
+}
+
 export async function getReports(limitCount:number=10) {
     try {
 
@@ -140,7 +174,7 @@ export async function getReports(limitCount:number=10) {
         const reports = querySnapshot.docs.map((doc) => ({
           id: doc.id, 
           ...doc.data(), 
-        }));
+        })) as ReportType[];
     
         return reports;
 
