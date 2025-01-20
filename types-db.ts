@@ -88,11 +88,11 @@ export interface taskId {
  volunteersAccepted: [volunteerId: string]
  createdAt: Date | Timestamp
  completed: boolean
- completedBy: string
  verificationImageUrl: string
- citizenConfirmationStatus: "pending" | "confirmed" | "notProperlyDone"
- citizenVerificationImageUrl: string
- citizenVerificationDeadline: Date
+ completedBy ?: string | string[]
+ citizenConfirmationStatus?: "pending" | "confirmed" | "notProperlyDone"
+ citizenVerificationImageUrl?: string
+ citizenVerificationDeadline?: Date
 }
 
 export interface VolunteerTask {

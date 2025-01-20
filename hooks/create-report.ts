@@ -1,6 +1,6 @@
 import { ReportColumn } from "@/app/(dashboard)/agency-dashboard/[agencyId]/requests/components/columns";
 import { db } from "@/lib/firebase";
-import { ReportType, Volunteer } from "@/types-db";
+import { ReportType, taskId, Volunteer } from "@/types-db";
 import { addDoc, collection, doc, getDoc, getDocs, limit, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -145,6 +145,7 @@ export async function createTask(agencyId: string, selectedReport: ReportColumn 
         agencyId: agencyId,
         report: selectedReport,
         volunteersAssigned: volunteers.map((volunteer) => volunteer.id),
+        volunteersAccepted: [],
         createdAt: Timestamp.fromDate(new Date()), 
         completed: false,
         verificationImageUrl: "",
@@ -204,4 +205,27 @@ export async function getReportsCitizen(userId: string, limitCount:number=10) {
         console.error("Error fetching reports:", error);
         throw new Error("Failed to fetch reports");
       }
+}
+
+
+export async function getTasks(limitCount:number=20) {
+  try {
+
+      const tasksRef = collection(db, "tasks");    
+      
+      const tasksQuery = query(tasksRef, limit(limitCount));
+      
+      const querySnapshot = await getDocs(tasksQuery);
+      
+      const tasks = querySnapshot.docs.map((doc) => ({
+        id: doc.id, 
+        ...doc.data(), 
+      })) as taskId[];
+  
+      return tasks;
+
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      throw new Error("Failed to fetch tasks");
+    }
 }

@@ -11,10 +11,6 @@ import { useRouter } from "next/navigation";
 import { Notification } from "@/types-db";
 import { SidebarTrigger } from "./ui/sidebar";
 
-interface NotificationBellProps {
-  notifications: Notification[];
-}
-
 export default function CitizenNavbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [citizenPoints, setCitizenPoints] = useState<number | null>(null);
