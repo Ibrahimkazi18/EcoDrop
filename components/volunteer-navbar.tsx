@@ -43,8 +43,6 @@ export default function VolunteerNavbar() {
             })) as Notification[];
 
             setNotifications(notificationsData);
-            console.log("Notifications", notifications)
-            console.log("user", currentUser)
           } else {
             console.error("volunteer document does not exist.");
           }

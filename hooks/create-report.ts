@@ -1,7 +1,7 @@
 import { ReportColumn } from "@/app/(dashboard)/agency-dashboard/[agencyId]/requests/components/columns";
 import { db } from "@/lib/firebase";
-import { ReportType, taskId, Volunteer } from "@/types-db";
-import { addDoc, collection, doc, getDoc, getDocs, limit, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { ReportType, taskId, User, Volunteer } from "@/types-db";
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export async function uploadImage(file: File | Blob, folder: string): Promise<string> {
@@ -208,19 +208,28 @@ export async function getReportsCitizen(userId: string, limitCount:number=10) {
 }
 
 
-export async function getTasks(limitCount:number=20) {
+export async function getTasks() {
   try {
 
       const tasksRef = collection(db, "tasks");    
       
-      const tasksQuery = query(tasksRef, limit(limitCount));
+      const tasksQuery = query(tasksRef, orderBy("createdAt" , "desc"));
       
       const querySnapshot = await getDocs(tasksQuery);
       
-      const tasks = querySnapshot.docs.map((doc) => ({
-        id: doc.id, 
-        ...doc.data(), 
-      })) as taskId[];
+      const tasks = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+    
+        const createdAt = data.createdAt instanceof Timestamp 
+          ? data.createdAt.toDate() 
+          : new Date(data.createdAt);
+    
+        return {
+          id: doc.id,
+          createdAt,
+          ...data,
+        };
+      }) as taskId[];
   
       return tasks;
 
@@ -228,4 +237,26 @@ export async function getTasks(limitCount:number=20) {
       console.error("Error fetching tasks:", error);
       throw new Error("Failed to fetch tasks");
     }
+}
+
+export async function getUsers() {
+  try {
+
+    const usersRef = collection(db, "users");    
+    
+    const usersQuery = query(usersRef);
+    
+    const querySnapshot = await getDocs(usersQuery);
+    
+    const users = querySnapshot.docs.map((doc) => ({
+      id: doc.id, 
+      ...doc.data(), 
+    })) as User[];
+
+    return users;
+
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw new Error("Failed to fetch users");
+  }
 }

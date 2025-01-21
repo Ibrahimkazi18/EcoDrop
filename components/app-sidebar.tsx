@@ -20,9 +20,6 @@ import { auth } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import useAuthStore from "@/store/authStore"
 
-// const currentUser = auth.currentUser?.uid ? auth.currentUser.uid : "nouserid"
-// let agencyId : string;
-
 export function AppSidebar() {
   const CitizenLabels = [
     {

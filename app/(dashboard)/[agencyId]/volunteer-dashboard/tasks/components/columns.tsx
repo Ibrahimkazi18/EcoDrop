@@ -48,7 +48,7 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
     }
 
     const toggleRow = (id: string) => {
-      setExpandedRow((prev) => (prev === id ? null : id));
+        setExpandedRow((prev) => (prev === id ? null : id));
     };
 
     return (
@@ -163,11 +163,11 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
                 </tbody>
             </table>
 
-             <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-between items-center mt-4">
                 <Button 
                     onClick={() => handlePageChange("prev")}
                     disabled={currentPage === 1}
-
+                    variant={"ghost"}
                 >
                     <ChevronLeftIcon className="w-4 h-4"/> Prev
                 </Button>
@@ -179,9 +179,9 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
                 <Button 
                     onClick={() => handlePageChange("next")}
                     disabled={currentPage === totalPages}
-
+                    variant={"ghost"}
                 >
-                    <ChevronRightIcon className="w-4 h-4"/> Next
+                    Next <ChevronRightIcon className="w-4 h-4"/>
                 </Button>
             </div>
           </div>

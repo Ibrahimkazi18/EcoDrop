@@ -1,6 +1,5 @@
 "use client";
 
-import { Volunteer } from "@/types-db";
 import { useEffect, useState } from "react";
 import CreateTaskTable, { TaskColumn } from "./components/columns";
 import Heading from "@/components/heading";
