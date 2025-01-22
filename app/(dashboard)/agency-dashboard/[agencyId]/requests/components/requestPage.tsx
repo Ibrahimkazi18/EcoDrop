@@ -6,7 +6,7 @@ import Modal from "@/components/modal";
 import { createColumns, ReportColumn } from "./columns";
 import RequestClient from "./client";
 import { createNotification, createTask } from "@/hooks/create-report";
-import toast from "react-hot-toast";
+import { toast } from 'react-toastify';
 
 const RequestPage = ({
   params,
@@ -20,8 +20,8 @@ const RequestPage = ({
   params: { agencyId: string };
   isModalOpen: boolean;
   selectedReport: ReportColumn | null;
-  selectedVolunteers: string[];
-  setSelectedVolunteers: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedVolunteers: Volunteer[];
+  setSelectedVolunteers: React.Dispatch<React.SetStateAction<Volunteer[]>>;
   openAssignModal: (report: ReportColumn) => void;
   closeAssignModal: () => void;
 }) => {
@@ -68,12 +68,14 @@ const RequestPage = ({
     fetchVolunteersAndReports();
   }, [params.agencyId]);
 
-  const toggleVolunteerSelection = (volunteerId: string) => {
+  const toggleVolunteerSelection = (volunteer : Volunteer) => {
     setSelectedVolunteers((prevState) => {
-      const newState = prevState.includes(volunteerId)
-        ? prevState.filter((id) => id !== volunteerId)
-        : [...prevState, volunteerId];
-      return newState;
+      const isAlreadySelected = prevState.some((v) => v.id === volunteer.id);
+    if (isAlreadySelected) {
+      return prevState.filter((v) => v.id !== volunteer.id);
+    } else {
+      return [...prevState, volunteer];
+    }
     });
   };
 
@@ -85,7 +87,7 @@ const RequestPage = ({
 
     await Promise.all(notificationPromises);
 
-    await createTask(params.agencyId, selectedReport , volunteers)
+    await createTask(params.agencyId, selectedReport , selectedVolunteers)
 
     closeAssignModal();
 
@@ -115,8 +117,8 @@ const RequestPage = ({
           {volunteers.map((volunteer) => (
             <div key={volunteer.id} className="flex items-center space-x-2 mb-2">
               <Checkbox
-                checked={selectedVolunteers.includes(volunteer.id)}
-                onCheckedChange={() => toggleVolunteerSelection(volunteer.id)}
+                checked={selectedVolunteers.some((v) => v.id === volunteer.id)}
+                onCheckedChange={() => toggleVolunteerSelection(volunteer)}
               />
               <span>{volunteer.username}</span>
             </div>

@@ -3,6 +3,7 @@ import DashboardClient from "@/app/(dashboard)/components/dashboardClient";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Navbar from "@/components/navbar";
+import { ToastContainer } from "react-toastify";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div>
               <DashboardClient>
                 <Navbar />
+                <ToastContainer />
                 {children}
               </DashboardClient>
             </div>

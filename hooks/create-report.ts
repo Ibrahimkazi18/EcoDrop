@@ -154,9 +154,13 @@ export async function createTask(agencyId: string, selectedReport: ReportColumn 
       });
 
       const taskDoc = await getDoc(taskRef);
-  
-      console.log("task created with ID:", taskRef.id);
 
+      const volunteersUpdate = volunteers.map((volunteer) => {
+        const volunteerRef = doc(db, `agencies/${agencyId}/volunteers`, volunteer.id);
+        return updateDoc(volunteerRef, {status: "assigned"});
+      });
+
+      await Promise.all(volunteersUpdate);
 } catch (error) {
     console.error("Error creating task:", error);
     throw new Error("Failed to create task");

@@ -52,6 +52,7 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
     };
 
     return (
+        <div>
         <div className="rounded-2xl shadow-lg overflow-hidden dark:shadow-gray-800 mt-6">
           <div className="max-h-98 overflow-y-auto">
             <table className="w-full">
@@ -163,28 +164,32 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
                 </tbody>
             </table>
 
-             <div className="flex justify-between items-center mt-4">
+            </div>
+
+        </div>
+            <div className="flex justify-end space-x-2 items-center mt-4">
                 <Button 
                     onClick={() => handlePageChange("prev")}
                     disabled={currentPage === 1}
-
-                >
-                    <ChevronLeftIcon className="w-4 h-4"/> Prev
+                    variant={"outline"}
+                    className="text-xs"
+                    >
+                    Previous
                 </Button>
 
-                <span>
-                    Page {currentPage} / {totalPages}
+                <span className="text-xs">
+                    {currentPage} / {totalPages}
                 </span>
 
                 <Button 
                     onClick={() => handlePageChange("next")}
                     disabled={currentPage === totalPages}
-
+                    variant={"outline"}
+                    className="text-xs"
                 >
-                    <ChevronRightIcon className="w-4 h-4"/> Next
+                    Next
                 </Button>
             </div>
-          </div>
         </div>
       );
 }

@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { MapPin, Upload, CheckCircle, Loader, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import toast from "react-hot-toast";
+import { toast } from 'react-toastify';
 import { createReport, getReportsCitizen } from "@/hooks/create-report";
 import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { User } from "@/types-db";
+import { computeImageHash } from "@/lib/utils";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -74,7 +75,6 @@ const ReportPage = () => {
         if (response.body.features) {
           setSuggestions(response.body.features.map((feature) => feature.place_name));
         }
-        console.log(suggestions)
       } catch (error) {
         console.error("Error fetching location suggestions:", error);
         toast.error("Failed to fetch location suggestions")
@@ -225,8 +225,22 @@ const ReportPage = () => {
 
     setIsSubmitting(true);
 
+    if (!imageFile) return;
+
     try {
-        const report = await createReport(
+            const imageHash = await computeImageHash(imageFile);
+
+            const imagesRef = collection(db, "image_hashes"); 
+            const q = query(imagesRef, where("hash", "==", imageHash));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+              toast.error("Image already exists. Cannot upload the same image for multiple reports.");
+              setVerificationStatus("failure");
+              return;
+            }
+
+            const report = await createReport(
             userId, 
             newReport.location, 
             newReport.type, 
@@ -244,6 +258,8 @@ const ReportPage = () => {
                 status: report.status,
                 createdAt: report.createdAt.toDate().toISOString().split("T")[0],
             }
+
+            await addDoc(imagesRef, { hash: imageHash, uploadedAt: new Date() });
 
             setReports([...reports, formattedReport]);
             setNewReport({location: "", amount: "", type: ""});
@@ -330,7 +346,7 @@ const ReportPage = () => {
                             </label>
                             <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 4MB</p>
                     </div>
                 </div>
             </div>
@@ -496,7 +512,7 @@ const ReportPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {report.amount}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm capitalize">
                       {report.status}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">

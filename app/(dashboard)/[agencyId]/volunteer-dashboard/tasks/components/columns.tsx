@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 
@@ -19,6 +18,7 @@ export type TaskColumn = {
   agencyId: string;
   report: TaskReport;
   citizenConfirmationStatus: string;
+  verificationImageUrl: string;
   citizenVerificationImageUrl: string;
   completed: boolean;
   createdAt: string;
@@ -52,15 +52,16 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
     };
 
     return (
-        <div className="rounded-2xl shadow-lg overflow-hidden dark:shadow-gray-800 mt-6">
+        <div>
+        <div className="rounded-2xl shadow-lg overflow-hidden dark:shadow-gray-800">
           <div className="max-h-98 overflow-y-auto">
             <table className="w-full">
                 <thead>
                 <tr>
-                    <th className="px-6 py-3 text-left text-sm font-bold uppercase tracking-wider">Completed</th>
-                    <th className="px-6 py-3 text-left text-sm font-bold uppercase tracking-wider">Citizen Verification</th>
-                    <th className="px-6 py-3 text-left text-sm font-bold uppercase tracking-wider">Created At</th>
-                    <th className="px-6 py-3 text-left text-sm font-bold uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Completed</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Citizen Verification</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Created At</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Location</th>
                 </tr>
                 </thead>
 
@@ -162,29 +163,31 @@ const CreateTaskTable = ( {tasks} : {tasks: TaskColumn[]}) => {
                 )}
                 </tbody>
             </table>
-
-            <div className="flex justify-between items-center mt-4">
+          </div>
+        </div>
+            <div className="flex justify-end space-x-2 items-center mt-4">
                 <Button 
                     onClick={() => handlePageChange("prev")}
                     disabled={currentPage === 1}
-                    variant={"ghost"}
-                >
-                    <ChevronLeftIcon className="w-4 h-4"/> Prev
+                    variant={"outline"}
+                    className="text-xs"
+                    >
+                    Previous
                 </Button>
 
-                <span>
-                    Page {currentPage} / {totalPages}
+                <span className="text-xs">
+                    {currentPage} / {totalPages}
                 </span>
 
                 <Button 
                     onClick={() => handlePageChange("next")}
                     disabled={currentPage === totalPages}
-                    variant={"ghost"}
+                    variant={"outline"}
+                    className="text-xs"
                 >
-                    Next <ChevronRightIcon className="w-4 h-4"/>
+                    Next
                 </Button>
             </div>
-          </div>
         </div>
       );
 }
