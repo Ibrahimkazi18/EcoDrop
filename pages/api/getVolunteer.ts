@@ -1,4 +1,4 @@
-import { getTasks, getUsers } from "@/hooks/create-report";
+import { getUsers } from "@/hooks/create-report";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

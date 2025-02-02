@@ -10,27 +10,39 @@ import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import Image from "next/image";
+import { Loader, MessageSquarePlus, Upload } from "lucide-react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface currVol {
   id : string;
+  userId: string;
+  username: string;
   agencyId: string;
-  status: string;
-  points: number;
 }
+
+const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
 const TaskPage = ({params} : {params : {agencyId : string}}) => {   
     const [tasks, setTasks] = useState<TaskColumn[]>([]);
     const [currentVolunteer, setcurrentVolunteer] = useState<currVol>();
     const [assignedTask, setAssignedTask] = useState<TaskColumn | null>(null);
     const [loading, setLoading] = useState(true);
-    
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const pathName = usePathname() as string;
 
-  const fetchTasks = async () => {
+    const [file, setFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
 
+    const [imageFile, setImageFile] = useState<File | null>(null);
+  
+    const [verificationStatus, setVerificationStatus ] = useState<
+      'idle' | 'verifying' | 'success' | 'failure'
+    >('idle');
+    const [verificationResult, setVerificationResult] = useState<number>(0);
+
+  const fetchTasks = async () => {
     if (!currentUser) {
         console.error("No user ID available to fetch tasks");
         return;
@@ -53,13 +65,14 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
 
       if (!taskRes.ok) throw new Error(tasksData.error || "Failed to fetch tasks");
       if (!volunteerRes.ok) throw new Error(tasksData.error || "Failed to fetch tasks");
+      if (!volunteersData) throw new Error(tasksData.error || "Failed to fetch volunteerData");
       if (!Array.isArray(tasksData.tasks)) throw new Error("Tasks data is not an array");
 
       const formattedVolunteer = {
-        id: volunteersData.id,
-        agencyId: volunteersData.agencyId,
-        status: volunteersData.status,
-        points: volunteersData.points,
+        id: volunteersData.volunteer.volunteerId,
+        userId: volunteersData.volunteer.id,
+        username: volunteersData.volunteer.username,
+        agencyId: volunteersData.volunteer.agencyId,
       } as currVol;
 
       setcurrentVolunteer(formattedVolunteer);
@@ -79,7 +92,6 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
               : new Date(task.createdAt.seconds * 1000).toISOString().split("T")[0]
       })) as TaskColumn[]
 
-      console.log("FormattedTasks: ", formattedTasks)
       const activeTask = formattedTasks.find((task) => !task.completed);
       setAssignedTask(activeTask || null);
 
@@ -117,9 +129,20 @@ const handleTaskAccept = async () => {
   try {
     if (!assignedTask) return;
 
+    if (!currentVolunteer || !currentUser) {
+      console.log("user not found")      
+      return
+    };
+
     await fetch(`/api/acceptTask`, {
       method: "POST",
-      body: JSON.stringify({ taskId: assignedTask.id }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        taskId: assignedTask.id,
+        volunteerId: currentVolunteer.id, 
+      }),
     });
 
     toast.success("Task accepted!");
@@ -128,6 +151,92 @@ const handleTaskAccept = async () => {
     console.error("Error accepting task:", error);
   }
 };
+
+  const handleFileChange = (e:React.ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files && e.target.files[0]){
+        const selectedFile = e.target.files[0];
+
+        if (selectedFile.size > 4 * 1024 * 1024) {
+          toast.error("File size must be less than 4MB");
+          return;
+        }
+
+        setFile(selectedFile);
+        setImageFile(e.target.files[0]);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setPreview(e.target?.result as string)
+        }
+        reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const readFileAsBase64 = (file: File) : Promise <string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    })
+  }
+
+  const handleVerify = async () => {
+    if(!file) return
+
+    if(!geminiApiKey) {
+      console.error("Gemini API key not configured");
+      return;
+    }
+
+    setVerificationStatus("verifying");
+
+    try {
+      const genAi = new GoogleGenerativeAI(geminiApiKey);
+      const model = genAi.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 1024,
+        }
+      });
+      const base64Data = await readFileAsBase64(file);
+
+      const fileSizeInMB = file.size / (1024 * 1024);
+      if (fileSizeInMB > 4) {
+          toast.error("File size must be less than 4MB for Gemini API");
+          setVerificationStatus("failure");
+          return;
+      }
+
+      const imageParts = [
+        {
+            inlineData: {
+                data: base64Data.split(',')[1],
+                mimeType: file.type,
+            }
+        }
+      ];
+
+      const prompt = ``;
+
+      const result = await model.generateContent({
+        contents: [{role: "volunteer", parts: [{text: prompt}, ...imageParts]}]
+      })
+      const response = result.response;
+      let text = response.text().trim();
+      if (text.startsWith("```") && text.endsWith("```")) {
+        text = text.slice(7, -3).trim();
+      }
+
+    } catch (error : any) {
+      console.error("Error verifying waste:", error);
+      toast.error(error.message || "Failed to verify waste");
+      setVerificationStatus('failure');
+    }
+  }
+
+  const handleSubmit = () => {}
     
   if(!isMounted) return null;
 
@@ -177,12 +286,68 @@ const handleTaskAccept = async () => {
                         Accept Task
                       </Button>
                     )}
+
+                    {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && assignedTask.volunteersAssigned.length > 1 && (
+                      <Button
+                        className="flex justify-between space-x-2"
+                      >
+                        <MessageSquarePlus /> <span>Connect</span>
+                      </Button>
+                    )}
                   </div>
 
                   <div> 
                       <Image src={assignedTask.report.imageUrl} alt="image not loaded" width={400} height={400}/>
                   </div>
                 </div>
+
+                {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && (
+                <div>
+                  <form onSubmit={handleSubmit} className="dark:bg-gray-800 bg-gray-50 p-8 rounded-2xl shadow-lg mb-4 mt-8">
+                    <div className="mb-8">
+                        <label htmlFor="waste-image" className="block text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
+                            Upload Waste Image
+                        </label>
+
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300">
+                            <div className="space-y-1 text-center">
+                                <Upload className="mx-auto h-12 w-12 text-gray-600"/>
+
+                                <div className="flex text-sm text-gray-600">
+                                    <label htmlFor="waste-image" 
+                                    className="relative cursor-pointer rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500">
+                                        <span>Upload a file</span>
+                                        <input id="waste-image" name="waste-image" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
+                                    </label>
+                                    <p className="pl-1">or drag and drop</p>
+                                </div>
+                                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 4MB</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {preview && (
+                        <div className="mt-4 mb-8">
+                            <img src={preview} alt="Waste preview" className="max-w-full h-auto rounded-xl shadow-md" />
+                        </div>
+                    )}
+
+                    <Button 
+                    type="button" 
+                    onClick={handleVerify} 
+                    className="w-full mb-8 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg rounded-xl transition-colors duration-300" 
+                    disabled={!file || verificationStatus === 'verifying'}
+                    >
+                    {verificationStatus === 'verifying' ? (
+                    <>
+                      <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                      Verifying...
+                    </>
+                    ) : 'Verify Waste'}
+                    </Button>
+                     
+                  </form>
+                </div> )}
               </div>
             ) : (
               <p>No assigned tasks at the moment.</p>

@@ -137,32 +137,40 @@ export function AppSidebar() {
   const setAuthData = useAuthStore((state) => state.setAuthData);
 
   useEffect(() => {
-   
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user.uid);
-
+  
         const parts = pathName.split("/");
-        if (pathName.includes("agency-dashboard") && parts[2]) {
-          setAgencyId(parts[2]);
-        } else if (pathName.includes("volunteer-dashboard") && parts[1]) {
-          setAgencyId(parts[1]);
+        let extractedAgencyId = null;
+        let extractedCitizenId = null;
+  
+        if (pathName.includes("agency-dashboard") && parts.length > 2) {
+          extractedAgencyId = parts[2];
+        } else if (pathName.includes("volunteer-dashboard") && parts.length > 1) {
+          extractedAgencyId = parts[1];
         } else {
-          setAgencyId(null);
-          setCitizenId(user.uid);
+          extractedCitizenId = user.uid;
         }
-
-        setAuthData(user.uid, agencyId);
+  
+        setAgencyId(extractedAgencyId);
+        setCitizenId(extractedCitizenId);
+  
+        // Ensure `setAuthData` is called only after state updates
+        setTimeout(() => {
+          setAuthData(user.uid, extractedAgencyId);
+        }, 0);
       } else {
         setCurrentUser(null);
         setAgencyId(null);
       }
     });
-
+  
     setIsMounted(true);
-
+  
     return () => unsubscribe();
-  }, [pathName]);
+  }, [pathName, setAuthData]);
+  
 
   useEffect(() => {
     setIsMounted(true);
@@ -184,15 +192,6 @@ export function AppSidebar() {
         ...label,
         url: label.url.replace("{agencyId}", agencyId || "nouserid"),
       }));
-
-  // const pathName = usePathname();
-
-  // const items = pathName.includes("agency-dashboard") ? 
-  //                   AgencyLabels : pathName.includes("citizen-dashboard") ? 
-  //                       CitizenLabels : VolunteerLabels;
-
-  // const parts = pathName.split("/");
-  // agencyId = parts[1];
 
   return (
     <Sidebar collapsible="icon">

@@ -2,12 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db, signInWithGoogle } from "@/lib/firebase"; // Import auth from firebase.ts
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { useToast } from "@/hooks/use-toast"; // Make sure this is correctly implemented
-import { Button } from "@/components/ui/button"; // Import ShadCN Button
-import { Input } from "@/components/ui/input"; // Import ShadCN Input
-import { Label } from "@/components/ui/label"; // Import ShadCN Label
+import { auth, db, signInWithGoogle } from "@/lib/firebase"; 
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast"; 
+import { Button } from "@/components/ui/button"; 
+import { Input } from "@/components/ui/input"; 
+import { Label } from "@/components/ui/label"; 
 import { FcGoogle } from "react-icons/fc";
 import { doc, getDoc } from "firebase/firestore";
 import { FaEye, FaEyeSlash } from "react-icons/fa"
@@ -15,8 +15,10 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"
 export default function SignIn() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [resetEmail, setResetEmail] = useState<string>(""); 
   const [error, setError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showReset, setShowReset] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -24,7 +26,6 @@ export default function SignIn() {
     setShowPassword((prev) => !prev);
   };
 
-  // Function to fetch user role from Firestore 
   const fetchUserRole = async (userId: string): Promise<{ role: string; agencyId?: string }> => {
     const userDocRef = doc(db, "users", userId);
   
@@ -51,7 +52,7 @@ export default function SignIn() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(""); // Reset error before submission
+    setError(""); 
     const date = new Date();
 
     try {
@@ -99,16 +100,20 @@ export default function SignIn() {
       const result = await signInWithGoogle();
       const user = result.user;
 
-      // Fetch user role from Firestore
       const { role: userRole, agencyId } = await fetchUserRole(user.uid);
 
       sessionStorage.setItem("user", "true");
 
-      // Navigate to dashboard based on role
       if (userRole === "agency") {
-        router.push("/agency-dashboard");
+        router.push(`/agency-dashboard/${agencyId}`);
       } else if (userRole === "citizen") {
         router.push("/citizen-dashboard");
+      } else if (userRole === "volunteer") {
+        if (agencyId) {
+          router.push(`/${agencyId}/volunteer-dashboard`);
+        } else {
+          throw new Error("Agency ID not found");
+        }
       }
 
       toast({
@@ -124,6 +129,34 @@ export default function SignIn() {
       });
     }
   };
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: "Password Reset Email Sent",
+        description: `Check your inbox for reset instructions.`,
+      });
+      setResetEmail(""); // Clear input after sending
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email.",
+        variant: "destructive",
+      });
+    }
+  };
+  
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -185,6 +218,16 @@ export default function SignIn() {
             </Button>
           </div>
         </form>
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => setShowReset(true)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
+
         <p className="mt-2 text-center text-sm text-gray-600">
           Don't have an account?{" "}
           <a
@@ -195,6 +238,29 @@ export default function SignIn() {
           </a>
         </p>
       </div>
+
+      {showReset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96">
+            <h3 className="text-lg font-bold mb-4">Reset Password</h3>
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              className="w-full mb-3 text-black"
+            />
+            <div className="flex justify-between">
+              <Button onClick={handlePasswordReset} className="w-full mr-2">
+                Send Reset Email
+              </Button>
+              <Button onClick={() => setShowReset(false)} variant="outline" className="w-full">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
+export const cache = 0;
+
 const ProductsPage = ({params} : {params : {agencyId : string}}) => {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,18 +16,13 @@ const ProductsPage = ({params} : {params : {agencyId : string}}) => {
     const fetchVolunteers = async () => {
       try {
         const volunteersRef = collection(db, `agencies/${params.agencyId}/volunteers`);
-        console.log("Fetching volunteers from:", `agencies/${params.agencyId}/volunteers`);
         const volunteersSnapshot = await getDocs(volunteersRef);
 
-        console.log("params: ", params.agencyId)
-        console.log("fetched data: ", volunteersSnapshot)
-        console.log("current: ", auth.currentUser)
         const response = volunteersSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         })) as Volunteer[];
 
-        console.log(response);
         setVolunteers(response);
 
         if(volunteers) {
@@ -34,7 +31,6 @@ const ProductsPage = ({params} : {params : {agencyId : string}}) => {
         else {
           console.log("NO volunteers")
         }
-        console.log(volunteers);
       } catch (error) {
         console.error('Error fetching volunteers:', error);
       }

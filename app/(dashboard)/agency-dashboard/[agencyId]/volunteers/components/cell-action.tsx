@@ -1,16 +1,16 @@
 "use client"
 
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { VolunteerColumn } from "./columns"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Copy, MoreVertical, Trash } from "lucide-react"
+import { MoreVertical, Trash } from "lucide-react"
 import { AlertModal } from "@/components/modal/alert-modal"
-import toast from "react-hot-toast"
 import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore"
 import { db, functions } from "@/lib/firebase"
 import { httpsCallable } from "firebase/functions"
+import toast from "react-hot-toast"
 
 interface CellActionProps {
     data : VolunteerColumn
@@ -18,33 +18,17 @@ interface CellActionProps {
 
 const CellAction = ({ data } : CellActionProps) => {
 
-  const router = useRouter()
-
   const [isLoading, setIsLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
-  const onCopy = (id : string) => {
-    navigator.clipboard.writeText(id)
-    toast.success("Volunteer Id Copied to Clipboard")
-  }
-  
   const pathName = usePathname();
-
-  const copyId = () => {
-    const parts = pathName.split("/");
-    const agencyId = parts[2];
-    console.log("Cell Action", agencyId);
-  }
-
-  useEffect(() => {
-    copyId();
-  }, [])
 
   const onDelete = async () => {
     try {
       console.log("Delete Button Clicked");
       setIsLoading(true);
 
+      if(!pathName) return
 
       const parts = pathName.split("/");
       const agencyId = parts[2];
@@ -56,31 +40,44 @@ const CellAction = ({ data } : CellActionProps) => {
       const volunteerQuery = query(collection(db, "users"), where("email", "==", volunteerEmail));
       const volunteerSnapshot = await getDocs(volunteerQuery);
       
+      if (volunteerSnapshot.empty) {
+        //Th volunteer has not yet signed in so we have to use this method too. 
+        
+        const volunteerQuery = query(collection(db, `agencies/${agencyId}/volunteers`), where("email", "==", volunteerEmail));
+        const volunteerSnapshot = await getDocs(volunteerQuery);
+        
+        if(!volunteerSnapshot.empty){
+          const volunteerDoc = volunteerSnapshot.docs[0];
+          const volunteerId = volunteerDoc.id;
+          console.log(volunteerId);
+          
+          const volunteerDocRef = doc(db, `agencies/${agencyId}/volunteers`, data.id);
+          await deleteDoc(volunteerDocRef);
+          console.log(data.id);
+        }
+      }
+      
       if(!volunteerSnapshot.empty){
           const volunteerDoc = volunteerSnapshot.docs[0];
           const volunteerId = volunteerDoc.id;
           console.log(volunteerId);
           
-          //Deleting from /agency/{agencyId}/volunteers collection
           const volunteerDocRef = doc(db, `agencies/${agencyId}/volunteers`, data.id);
           await deleteDoc(volunteerDocRef);
           console.log(data.id);
 
-          //Deleting from users collection
           await deleteDoc(doc(db, "users", volunteerId));
 
-          //Deleting from Firebase Authentication
           const deleteUserFunction = httpsCallable(functions, "deleteUser");
           await deleteUserFunction({ uid: volunteerId }); 
       }
 
       toast.success("Volunteer Removed")
-      router.refresh()
-
+      window.location.reload()
     } catch (error) {
-        toast.error("Something went wrong")
+      toast.error("Something went wrong")
     } finally {
-        router.refresh()
+        window.location.reload()
         setIsLoading(false)
         setOpen(false)
     }
@@ -105,11 +102,6 @@ const CellAction = ({ data } : CellActionProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={copyId}>
-                    <Copy className="h-4 w-4 mr-2"/>
-                    Copy Id
-                </DropdownMenuItem>
-
                 <DropdownMenuItem onClick={() => setOpen(true)}>
                     <Trash className="h-4 w-4 mr-2"/>
                     Delete

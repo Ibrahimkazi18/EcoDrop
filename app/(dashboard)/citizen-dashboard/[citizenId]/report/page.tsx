@@ -131,7 +131,7 @@ const ReportPage = () => {
               temperature: 0.4,
               maxOutputTokens: 1024,
           }
-      });
+        });
         const base64Data = await readFileAsBase64(file);
 
         // Add file size validation
