@@ -23,6 +23,7 @@ export interface Citizen extends User {
   level: number;
   exp: number;
   streak: number;
+  lastReportDate: Date | null;
 }
 
 export interface Volunteer extends User {

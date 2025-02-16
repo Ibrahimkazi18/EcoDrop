@@ -3,6 +3,7 @@ import { db } from "@/lib/firebase";
 import { Agency, Citizen, ReportType, taskId, User, Volunteer } from "@/types-db";
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { handleReportSubmission } from "./levelMainter";
 
 export async function uploadImage(file: File | Blob, folder: string): Promise<string> {
   try {
@@ -86,6 +87,7 @@ export async function updateRewardPoints (userId : string, pointsToAdd : number)
         const updatedPoints = currentPoints + pointsToAdd;
         const updatedTotalPoints = currentTotalPoints + pointsToAdd;
 
+        await handleReportSubmission(userId);
         await updateDoc(citizenRef, { points: updatedPoints, totalPoints: updatedTotalPoints });
         
         return updatedPoints;

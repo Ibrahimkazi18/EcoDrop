@@ -122,7 +122,7 @@ export default function SignUp() {
           await setDoc(doc(db, "users", userId), userData);
   
           if (role === "citizen") {
-              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, communityIds: [""], badResponses: 0 };
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, lastReportDate: null, communityIds: [""], badResponses: 0 };
               await setDoc(doc(db, "citizens", userId), citizenData);
   
           } else if (role === "agency") {
