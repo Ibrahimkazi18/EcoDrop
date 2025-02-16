@@ -5,11 +5,9 @@ import VolunteerForm from "./_components/volunteer-form";
 
 const VolunteerAdd = async ({ params }: { params: { agencyId: string; volunteerId: string } }) => {
 
-  // Create the document reference for the volunteer
   const volunteerDocRef = doc(db, "agencies", params.agencyId, "volunteers", params.volunteerId);
   console.log(params.agencyId)
 
-  // Fetch the volunteer document
   const volunteerSnapshot = await getDoc(volunteerDocRef);
 
   const volunteer = volunteerSnapshot.data() as Volunteer;

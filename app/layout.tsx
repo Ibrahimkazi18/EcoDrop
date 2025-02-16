@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,22 +27,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          suppressHydrationWarning
-          >
+      <head />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
-
           <Toaster />
-          
-        </body>
-      </ThemeProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

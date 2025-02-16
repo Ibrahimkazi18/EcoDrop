@@ -8,10 +8,11 @@ import { onAuthStateChanged } from "firebase/auth";
 import { usePathname } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-toastify";
 import Image from "next/image";
 import { Loader, MessageSquarePlus, Upload } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getDownloadURL, getStorage, ref, uploadString } from "firebase/storage";
+import { useToast } from "@/hooks/use-toast";
 
 interface currVol {
   id : string;
@@ -36,6 +37,8 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
     const [preview, setPreview] = useState<string | null>(null);
 
     const [imageFile, setImageFile] = useState<File | null>(null);
+
+    const { toast } = useToast();
   
     const [verificationStatus, setVerificationStatus ] = useState<
       'idle' | 'verifying' | 'success' | 'failure'
@@ -145,7 +148,10 @@ const handleTaskAccept = async () => {
       }),
     });
 
-    toast.success("Task accepted!");
+    toast({
+      title: "Task Accepted!",
+      description: `${assignedTask.id} has been accepted by you.`
+    })
     fetchTasks();
   } catch (error) {
     console.error("Error accepting task:", error);
@@ -157,7 +163,11 @@ const handleTaskAccept = async () => {
         const selectedFile = e.target.files[0];
 
         if (selectedFile.size > 4 * 1024 * 1024) {
-          toast.error("File size must be less than 4MB");
+          toast({
+            title: "Image Size Exceeded",
+            description: `File size must be less than 4MB.`,
+            variant: "destructive"
+          })
           return;
         }
 
@@ -172,6 +182,87 @@ const handleTaskAccept = async () => {
     }
   };
 
+  const storage = getStorage();
+
+  async function uploadImageAndGetUrl(base64Image: string, fileName: string) {
+    try {
+        const storageRef = ref(storage, `taskImages/${fileName}`);
+        await uploadString(storageRef, base64Image, "data_url");
+        return await getDownloadURL(storageRef);
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        return null;
+    }
+  }
+
+  const handleVerify = async () => {
+    if (!file) return;
+  
+    setVerificationStatus("verifying");
+
+    try {
+        const base64Data = await readFileAsBase64(file);
+
+        const fileName = `volunteer_${assignedTask?.id}_${Date.now()}.png`;
+
+        const volunteerImageUrl = await uploadImageAndGetUrl(base64Data, fileName);
+
+        if (!volunteerImageUrl) {
+          alert("Image upload failed. Please try again.");
+          return;
+        }
+        else{
+          console.log("VImage: ", volunteerImageUrl);
+        }
+          
+        const requestBody = JSON.stringify({
+            taskId: assignedTask?.id,  
+            citizenImageUrl: assignedTask?.report.imageUrl,
+            volunteerImageUrl: volunteerImageUrl,
+        });
+       
+        const response = await fetch("/api/verifyImage", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: requestBody,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || "Image verification failed");
+        }
+
+        // Process verification result
+        console.log("Verification Result:", result);
+        if (result.success) {
+            setVerificationStatus("success");
+            toast({
+              title: "Image verification successful!",
+              description: `You can now submit the form.`
+            })
+        } else {
+            setVerificationStatus("failure");
+            toast({
+              title: "Image verification failed",
+              description: `Please upload a correct image.`,
+              variant: "destructive"
+            })
+        }
+    } catch (error: any) {
+        console.error("Error verifying image:", error);
+        toast({
+          title: "Image verification failed",
+          description: `Error: ${error.message}`,
+          variant: "destructive"
+        })
+        setVerificationStatus("failure");
+    }
+};
+
+
   const readFileAsBase64 = (file: File) : Promise <string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -181,66 +272,11 @@ const handleTaskAccept = async () => {
     })
   }
 
-  const handleVerify = async () => {
-    if(!file) return
-
-    if(!geminiApiKey) {
-      console.error("Gemini API key not configured");
-      return;
-    }
-
-    setVerificationStatus("verifying");
-
-    try {
-      const genAi = new GoogleGenerativeAI(geminiApiKey);
-      const model = genAi.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 1024,
-        }
-      });
-      const base64Data = await readFileAsBase64(file);
-
-      const fileSizeInMB = file.size / (1024 * 1024);
-      if (fileSizeInMB > 4) {
-          toast.error("File size must be less than 4MB for Gemini API");
-          setVerificationStatus("failure");
-          return;
-      }
-
-      const imageParts = [
-        {
-            inlineData: {
-                data: base64Data.split(',')[1],
-                mimeType: file.type,
-            }
-        }
-      ];
-
-      const prompt = ``;
-
-      const result = await model.generateContent({
-        contents: [{role: "volunteer", parts: [{text: prompt}, ...imageParts]}]
-      })
-      const response = result.response;
-      let text = response.text().trim();
-      if (text.startsWith("```") && text.endsWith("```")) {
-        text = text.slice(7, -3).trim();
-      }
-
-    } catch (error : any) {
-      console.error("Error verifying waste:", error);
-      toast.error(error.message || "Failed to verify waste");
-      setVerificationStatus('failure');
-    }
-  }
-
   const handleSubmit = () => {}
     
   if(!isMounted) return null;
 
-  if (loading) return <p>Loading volunteers...</p>;
+  if (loading) return <p>Loading tasks...</p>;
 
   if (!tasks || tasks.length === 0 && !assignedTask) return <p>No tasks available.</p>;
 
@@ -248,7 +284,7 @@ const handleTaskAccept = async () => {
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-16 pt-6">
         <div className="mb-6">
-          {assignedTask ?
+          {assignedTask ? 
             (<>
               <Heading title={`Assigned Tasks`} description="View Your Assigned Tasks..." />
             </>) : (

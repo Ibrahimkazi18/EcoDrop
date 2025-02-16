@@ -4,7 +4,7 @@ import { VolunteerColumn } from "./components/columns";
 import ProductClient from "./components/client";
 import { useEffect, useState } from "react";
 import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 export const cache = 0;
 

@@ -122,7 +122,7 @@ export default function SignUp() {
           await setDoc(doc(db, "users", userId), userData);
   
           if (role === "citizen") {
-              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, communityIds: [""], badResponses: 0 };
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, communityIds: [""], badResponses: 0 };
               await setDoc(doc(db, "citizens", userId), citizenData);
   
           } else if (role === "agency") {
@@ -152,12 +152,13 @@ export default function SignUp() {
         toast({
             title: "Sign Up Unsuccessful",
             description: `${email} could not sign up. Error: ${err.message}`,
+            variant: "destructive"
         });
     }
 };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8" >
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

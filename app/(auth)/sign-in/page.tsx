@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db, signInWithGoogle } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
@@ -21,6 +21,13 @@ export default function SignIn() {
   const [showReset, setShowReset] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -84,6 +91,7 @@ export default function SignIn() {
       toast({
         title: "Sign In Successful",
         description: `${email} logged in at ${date.toLocaleString()}`,
+        variant: "default"
       });
     } catch (err: any) {
       console.error(err);
@@ -91,6 +99,7 @@ export default function SignIn() {
       toast({
         title: "Log In Unsuccessful",
         description: `Could not log in. Error: ${err.message}`,
+        variant: "destructive"
       });
     }
   };
@@ -126,6 +135,7 @@ export default function SignIn() {
       toast({
         title: "Google Sign In Unsuccessful",
         description: `Could not log in with Google.`,
+        variant: "destructive"
       });
     }
   };
@@ -166,6 +176,7 @@ export default function SignIn() {
             Log In to an Account
           </h2>
         </div>
+          
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div className="space-y-4">

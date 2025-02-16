@@ -9,5 +9,5 @@
     "target": "es2017"
   },
   "compileOnSave": true,
-  "include": ["src", "userManagement.ts"]
+  "include": ["src", "src/userManagement.ts", "src/imageComparision.ts"]
 }

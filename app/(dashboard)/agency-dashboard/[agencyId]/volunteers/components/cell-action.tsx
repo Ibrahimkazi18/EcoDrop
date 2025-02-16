@@ -10,7 +10,7 @@ import { AlertModal } from "@/components/modal/alert-modal"
 import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore"
 import { db, functions } from "@/lib/firebase"
 import { httpsCallable } from "firebase/functions"
-import toast from "react-hot-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface CellActionProps {
     data : VolunteerColumn
@@ -20,6 +20,7 @@ const CellAction = ({ data } : CellActionProps) => {
 
   const [isLoading, setIsLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const { toast } = useToast();
 
   const pathName = usePathname();
 
@@ -36,12 +37,10 @@ const CellAction = ({ data } : CellActionProps) => {
       const volunteerEmail = data.email
       console.log(volunteerEmail);
       
-      // 1. Fetch the volunteer document from the users collection based on email
       const volunteerQuery = query(collection(db, "users"), where("email", "==", volunteerEmail));
       const volunteerSnapshot = await getDocs(volunteerQuery);
       
       if (volunteerSnapshot.empty) {
-        //Th volunteer has not yet signed in so we have to use this method too. 
         
         const volunteerQuery = query(collection(db, `agencies/${agencyId}/volunteers`), where("email", "==", volunteerEmail));
         const volunteerSnapshot = await getDocs(volunteerQuery);
@@ -60,7 +59,6 @@ const CellAction = ({ data } : CellActionProps) => {
       if(!volunteerSnapshot.empty){
           const volunteerDoc = volunteerSnapshot.docs[0];
           const volunteerId = volunteerDoc.id;
-          console.log(volunteerId);
           
           const volunteerDocRef = doc(db, `agencies/${agencyId}/volunteers`, data.id);
           await deleteDoc(volunteerDocRef);
@@ -70,12 +68,20 @@ const CellAction = ({ data } : CellActionProps) => {
 
           const deleteUserFunction = httpsCallable(functions, "deleteUser");
           await deleteUserFunction({ uid: volunteerId }); 
+
+          toast({
+            title: "Volunteer Removed",
+            description: `${volunteerId} deleted from your Agency.`,
+          });
       }
 
-      toast.success("Volunteer Removed")
       window.location.reload()
     } catch (error) {
-      toast.error("Something went wrong")
+        toast({
+          title: "Something Went Wrong",
+          description: `Error: ${error}`,
+          variant: "destructive"
+        });
     } finally {
         window.location.reload()
         setIsLoading(false)

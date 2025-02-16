@@ -1,11 +1,7 @@
 import { useUser } from "@/hooks/use-user"; 
-import { auth } from "@/lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
 
 const UserGreeting = () => {
   const { user, loading } = useUser();
-
-  const [us, load, error] = useAuthState(auth);
 
   return (  
     <div>
@@ -14,8 +10,6 @@ const UserGreeting = () => {
       ) : (
         <p>Not Found</p>
       )}
-
-      {us? (<p>{us.displayName}</p>) : (<p>no</p>)}
     </div>
   );
 };

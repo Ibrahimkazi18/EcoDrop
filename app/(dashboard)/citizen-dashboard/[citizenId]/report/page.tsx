@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { MapPin, Upload, CheckCircle, Loader, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { toast } from 'react-toastify';
 import { createReport, getReportsCitizen } from "@/hooks/create-report";
 import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
 import { Separator } from "@/components/ui/separator";
@@ -12,12 +11,14 @@ import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { User } from "@/types-db";
 import { computeImageHash } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
 const ReportPage = () => { 
   const userId = auth.currentUser?.uid;
+  const { toast } = useToast();
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -40,6 +41,7 @@ const ReportPage = () => {
   >([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDropping, setIsDropping] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const [newReport, setNewReport] = useState({
@@ -77,7 +79,6 @@ const ReportPage = () => {
         }
       } catch (error) {
         console.error("Error fetching location suggestions:", error);
-        toast.error("Failed to fetch location suggestions")
       }
     } else {
       setSuggestions([]);
@@ -89,7 +90,11 @@ const ReportPage = () => {
         const selectedFile = e.target.files[0];
 
         if (selectedFile.size > 4 * 1024 * 1024) {
-          toast.error("File size must be less than 4MB");
+          toast({
+            title: "Size Limit Exceeded",
+            description: "File size must be less than 4MB",
+            variant: "destructive"
+          })
           return;
         }
 
@@ -117,7 +122,7 @@ const ReportPage = () => {
     if(!file) return;
 
     if (!geminiApiKey) {
-      toast.error("Gemini API key is not configured");
+      console.error("Gemini API key is not configured");
       return;
     }
 
@@ -137,7 +142,11 @@ const ReportPage = () => {
         // Add file size validation
         const fileSizeInMB = file.size / (1024 * 1024);
         if (fileSizeInMB > 4) {
-            toast.error("File size must be less than 4MB for Gemini API");
+            toast({
+              title: "Size Limit Exceeded",
+              description: "File size must be less than 4MB",
+              variant: "destructive"
+            })
             setVerificationStatus("failure");
             return;
         }
@@ -187,7 +196,10 @@ const ReportPage = () => {
                     type: parseResult.wasteType,
                     amount: parseResult.quantity,
                 });
-                toast.success("Image verified successfully!");
+                toast({
+                  title: "Verification Success!",
+                  description: "Image verified successfully!",
+                })
               }
 
               else {
@@ -197,21 +209,27 @@ const ReportPage = () => {
                   ? "The waste is not classified as e-waste." 
                   : "The confidence level is below 70%.";
                 
-                toast.error(`Verification failed: ${reason}`);
+                toast({
+                  title: "Verification Failed",
+                  description: `${reason}`,
+                  variant: "destructive"
+                })
               }
             } else {
-                toast.error("Invalid response format from AI");
+                toast({
+                  title: "Something Went Wrong",
+                  description: `Invalid response format from AI`,
+                  variant: "destructive"
+                })
                 setVerificationStatus('failure');
             }
         } catch (error) {
             console.error("Failed to parse JSON response:", error);
-            toast.error("Failed to parse AI response");
             setVerificationStatus('failure');
         }
 
     } catch(error: any) {
         console.error("Error verifying waste:", error);
-        toast.error(error.message || "Failed to verify waste");
         setVerificationStatus('failure');
     }
 }
@@ -219,7 +237,11 @@ const ReportPage = () => {
     e.preventDefault();
 
     if(verificationStatus != 'success' || !userId){
-        toast.error("Please verify the waste before submitting or login");
+        toast({
+          title: "Something Went Wrong",
+          description: `Please verify the waste before submitting or login`,
+          variant: "destructive"
+        })
         return;
     }
 
@@ -235,7 +257,11 @@ const ReportPage = () => {
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-              toast.error("Image already exists. Cannot upload the same image for multiple reports.");
+              toast({
+                title: "Image Already Exists",
+                description: `Cannot upload the same image for multiple reports.`,
+                variant: "destructive"
+              })
               setVerificationStatus("failure");
               return;
             }
@@ -268,15 +294,68 @@ const ReportPage = () => {
             setVerificationStatus("idle");
             setVerificationResult(null);
 
-            toast.success("Report submitted successfully!")
+            toast({
+              title: "Report Submitted Successfully!",
+              description: `You can see the status of the report in the table below`,
+            })
 
     } catch (error) {
         console.error("Error creating report:", error);
-        toast.error("Failed to submit report. Please try again.");
+        toast({
+          title: "Report Failed",
+          description: `Failed to submit report. Please try again.`,
+          variant: "destructive"
+        })
     } finally {
         setIsSubmitting(false);
     }
   }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const droppedFile = e.dataTransfer.files[0];
+
+        if (droppedFile.size > 4 * 1024 * 1024) {
+            toast({
+                title: "Size Limit Exceeded",
+                description: "File size must be less than 4MB",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setFile(droppedFile);
+        setImageFile(droppedFile);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(droppedFile);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDropping(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDropping(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDropping(false);
+  };
+
 
   useEffect(() => {
     const fetchReports = async (userId : string) => {
@@ -334,7 +413,12 @@ const ReportPage = () => {
                     Upload Waste Image
                 </label>
 
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300">
+                <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300 ${isDropping ? "border-green-500" : "border-gray-300"}`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                >
                     <div className="space-y-1 text-center">
                         <Upload className="mx-auto h-12 w-12 text-gray-600"/>
 

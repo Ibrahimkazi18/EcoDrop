@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "@google-cloud/vision": "^4.3.2",
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.9.0",
     "@mapbox/mapbox-sdk": "^0.16.1",
@@ -31,6 +32,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^10.14.1",
     "firebase-admin": "^12.7.0",
+    "googleapis": "^144.0.0",
     "lucide-react": "^0.447.0",
     "next": "14.2.14",
     "next-themes": "^0.3.0",
@@ -41,6 +43,7 @@
     "react-hot-toast": "^2.4.1",
     "react-icons": "^5.3.0",
     "react-toastify": "^11.0.3",
+    "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5",

@@ -6,7 +6,7 @@ import Modal from "@/components/modal";
 import { createColumns, ReportColumn } from "./columns";
 import RequestClient from "./client";
 import { createNotification, createTask } from "@/hooks/create-report";
-import { toast } from 'react-toastify';
+import { useToast } from "@/hooks/use-toast";
 
 const RequestPage = ({
   params,
@@ -29,6 +29,8 @@ const RequestPage = ({
   const [reports, setReports] = useState<ReportColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { toast } = useToast();
 
   const fetchVolunteersAndReports = async () => {
     try {
@@ -91,7 +93,10 @@ const RequestPage = ({
 
     closeAssignModal();
 
-    toast.success("Task assigned successfully!")
+    toast({
+      title: "Task Assigned Successfully!",
+      description: `${selectedReport?.id} assigned to: ${selectedVolunteers.map((v) => `${v.username}, `)}`
+    })
 
     await fetchVolunteersAndReports()
   };

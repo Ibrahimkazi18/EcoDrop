@@ -1,5 +1,5 @@
 "use client"
-import { Bell, Calendar, ClipboardEdit, Home, Inbox, Mail, Search, Settings, Trophy, Users } from "lucide-react"
+import { Bell, Calendar, ClipboardEdit, Home, Mail, Search, Settings, Trophy, Users, Gift, MapPin } from "lucide-react"
 
 import {
   Sidebar,
@@ -30,7 +30,7 @@ export function AppSidebar() {
     {
       title: "Report",
       url: "/citizen-dashboard/{citizenId}/report",
-      icon: Inbox,
+      icon: MapPin,
     },
     {
       title: "Notifications",
@@ -40,11 +40,11 @@ export function AppSidebar() {
     {
       title: "Rewards",
       url: "/citizen-dashboard/{citizenId}/rewards",
-      icon: Search,
+      icon: Gift,
     },
     {
       title: "Leaderboard",
-      url: "/citizen-dashboard/leaderboard",
+      url: "/citizen-dashboard/{citizenId}/leaderboard",
       icon: Trophy,
   }
   ]
@@ -102,6 +102,11 @@ export function AppSidebar() {
         title: "Notifications",
         url: `/{agencyId}/volunteer-dashboard/notifications`,
         icon: Search,
+      }, 
+      {
+        title: "Rewards",
+        url: `/{agencyId}/volunteer-dashboard/rewards`,
+        icon: Gift,
       }, 
       {
           title: "Leaderboard",
@@ -217,7 +222,7 @@ export function AppSidebar() {
                                     <SidebarMenuButton asChild>
                                         <a href={item.url}>
                                             <item.icon />
-                                            <span>{item.title}</span>
+                                            <span className="text-base">{item.title}</span>
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

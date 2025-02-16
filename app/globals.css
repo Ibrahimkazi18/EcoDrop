@@ -12,6 +12,16 @@ body {
   }
 }
 
+@keyframes flicker {
+  0%, 100% { opacity: 1; text-shadow: 0 0 10px rgb(254, 219, 22); font-weight: bold;}
+  50% { opacity: 0.8; text-shadow: 0 0 20px rgba(247, 218, 58, 0.8); }
+}
+
+.animate-flicker {
+  scale: 1.5;
+  animation: flicker 2s infinite alternate;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

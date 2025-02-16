@@ -5,7 +5,6 @@ import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import CellAction from "./cell-action"
 
-// This type is used to define the shape of our data.
 export type VolunteerColumn = {
   id : string,
   username : string,

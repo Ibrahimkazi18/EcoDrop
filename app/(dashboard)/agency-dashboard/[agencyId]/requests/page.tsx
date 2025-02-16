@@ -3,12 +3,13 @@
 import { useState } from "react";
 import RequestPage from "./components/requestPage";
 import { ReportColumn } from "./components/columns";
+import { Volunteer } from "@/types-db";
 
 
 const RequestPageWrapper = ({ params }: { params: { agencyId: string } }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ReportColumn | null>(null);
-  const [selectedVolunteers, setSelectedVolunteers] = useState<string[]>([]);
+  const [selectedVolunteers, setSelectedVolunteers] = useState<Volunteer[]>([]);
 
   // Function to open the modal and set the selected report
   const openAssignModal = (report: ReportColumn) => {

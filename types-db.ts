@@ -4,7 +4,6 @@ export type Role = "citizen" | "volunteer" | "agency";
 
 export type ToggleSidebarType = (isOpen: boolean) => void;
 
-// General User Interface
 export interface User {
   id: string;
   email: string;
@@ -15,48 +14,38 @@ export interface User {
   createdAt: Date;
 }
 
-// Citizen Interface
 export interface Citizen extends User {
   role: "citizen";
-  points: number;              // Points earned by reporting e-waste
-  communityIds: string[];      // Communities the citizen has joined
-  badResponses: number
+  communityIds: string[];      
+  badResponses: number;
+  points: number;             
+  totalPoints: number;             
+  level: number;
+  exp: number;
+  streak: number;
 }
 
-// Volunteer Interface
 export interface Volunteer extends User {
   role: "volunteer";
-  agencyId: string;            // The agency the volunteer is associated with
+  agencyId: string;            
   status: "available" | "working" | "unavailable";
-  tasksAssigned: string[];     // IDs of tasks assigned to the volunteer
-  hasSetPermanentPassword: boolean; // Flag to track if they have set their password
+  tasksAssigned: string[];    
+  hasSetPermanentPassword: boolean; 
   points: number;
 }
 
-// Agency Interface
 export interface Agency extends User {
   role: "agency";
   contactInfo: {
     phone: string;
     address: string;
   };
-  volunteers: string[];        // List of volunteer IDs associated with the agency
-  ratings: number[];           // Array of ratings given by citizens
+  volunteers: string[];        
+  ratings: number[];           
   badResults: number;
   isBanned: boolean;
   banStartDate?: Timestamp;
   banEndDate?: Timestamp;
-}
-
-// E-Waste Request Interface
-export interface EWasteRequest {
-  id: string;
-  citizenId: string;
-  imageUrl: string;
-  status: "pending" | "assigned" | "completed";
-  assignedVolunteers: string[];   // List of volunteer IDs assigned to this request
-  completionProofUrl?: string;    // URL of the image after cleaning
-  pointsAwarded: number;
 }
 
 export interface Notification {

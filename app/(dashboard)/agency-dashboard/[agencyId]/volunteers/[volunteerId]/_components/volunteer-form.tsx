@@ -6,16 +6,15 @@ import { Separator } from "@/components/ui/separator"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Volunteer } from "@/types-db"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Trash } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Input } from "@/components/ui/input"
-import toast from "react-hot-toast"
 import { db } from "@/lib/firebase"
 import { addDoc, arrayUnion, collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore"
 import * as XLSX from "xlsx";
+import { useToast } from "@/hooks/use-toast"
 
 interface VolunteerFormProps {
   initialData: Volunteer
@@ -36,6 +35,8 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
+
+  const { toast } = useToast();
 
   const [isManualEntry, setIsManualEntry] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,11 +123,17 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
       await addVolunteer(agencyId, data);
       console.log("after await")
 
-      toast.success(toastMessage);
+      toast({
+        title: `${toastMessage}`,
+      })
       router.refresh();
       router.push(`/agency-dashboard/${agencyId}/volunteers`);
     } catch (error) {
-      toast.error("Something went wrong");
+      toast({
+        title: "Something Went Wrong",
+        description: `Please try again.`,
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false);
     }
@@ -146,10 +153,16 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
       await addVolunteer(agencyId, data);
       console.log("after await")
 
-      toast.success(`${data.username} added to volunteers`);
+      toast({
+        title: `${data.username} Added to Volunteers`,
+      })
 
     } catch (error) {
-      toast.error(`${data.username} could not be added to volunteers`);
+      toast({
+        title: `${data.username} could not be Added to Volunteers`,
+        description: `Please try again.`,
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false);
     }
@@ -165,20 +178,26 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows: { username: string; email: string }[] = XLSX.utils.sheet_to_json(sheet);
         
-        // Validate and log the rows
         rows.forEach(async (row) => {
           if (!row.username || !row.email) {
             console.warn(`Row missing required fields: ${JSON.stringify(row)}`);
-            toast.error(`Row missing required fields: ${JSON.stringify(row)}`);
-            return; // Skip this row if any required field is missing
+            toast({
+              title: `Row Missing`,
+              description: `Required Fields: ${JSON.stringify(row)}`,
+              variant: "destructive"
+            })
+            return; 
           }
   
-          // Check if volunteer exists; if not, add them
           const volunteerExists = await checkVolunteerExists(row.username, row.email, agencyId);
           if (!volunteerExists) {
             await fileSubmit({ username: row.username, email: row.email, agencyId });
           } else {
-            toast.error(`Volunteer ${row.username} already exists.`);
+            toast({
+              title: `Volunteer ${row.username} already exists`,
+              description: `A Volunteer can only be created once and cannot be part of more than one agency.`,
+              variant: "destructive"
+            })
           }
         });
       };

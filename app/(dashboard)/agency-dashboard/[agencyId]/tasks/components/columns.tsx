@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 

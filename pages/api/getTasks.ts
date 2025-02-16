@@ -3,7 +3,6 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-
     const { agencyId } = req.query;
 
     if (!agencyId) {
