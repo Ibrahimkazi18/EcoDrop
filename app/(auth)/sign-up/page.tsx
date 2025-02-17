@@ -68,7 +68,7 @@ export default function SignUp() {
                 return;
               }
 
-              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0});
+              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, lastReportDate: null});
             }
             else {
               setError("This email is not registered under the specified agency. Contact the agency for access.");

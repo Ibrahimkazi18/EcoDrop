@@ -33,6 +33,11 @@ export interface Volunteer extends User {
   tasksAssigned: string[];    
   hasSetPermanentPassword: boolean; 
   points: number;
+  totalPoints: number;             
+  level: number;
+  exp: number;
+  streak: number;
+  lastReportDate: Date | null;
 }
 
 export interface Agency extends User {

@@ -1,24 +1,31 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button"; // Import ShadCN Button
-import { Input } from "@/components/ui/input"; // Import ShadCN Input
-import { Bell, Coins, Leaf, LogOut, Search } from "lucide-react"; // Import icons from lucide-react
+import { Button } from "@/components/ui/button"; 
+import { Bell, Coins, Leaf, LogOut } from "lucide-react"; 
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { Notification, User } from "@/types-db";
 import { auth, db } from "@/lib/firebase";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { getUserRank } from "@/hooks/levelMainter";
 
 export default function VolunteerNavbar() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [citizenPoints, setCitizenPoints] = useState<number | null>(null);
+  const [exp, setExp] = useState<number>(0);
+  const [level, setLevel] = useState<number>(1);
+  const [rank, setRank] = useState<"rookie" | "pro" | "master" | "expert">("rookie");
 
   const pathName = usePathname() as string;
   const parts = pathName.split("/");
   const agencyId = parts[1];
+
+  const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5)); 
+  const nextLevelExp = getNextLevelExp(level);
+  const progress = (exp / nextLevelExp) * 100;
 
   useEffect(() => {
     const fetchVolunteerNotification = async () => {
@@ -43,6 +50,19 @@ export default function VolunteerNavbar() {
             })) as Notification[];
 
             setNotifications(notificationsData);
+
+            try {
+                const volunteerData = volunteerDoc.data();
+                console.log(volunteerData)
+                setCitizenPoints(volunteerData.points || 0);
+                setExp(volunteerData.exp || 0);
+                setLevel(volunteerData.level || 1);
+                const getRank = getUserRank(level);
+                setRank(getRank);
+            } catch (error) {
+              console.error("Error fetching volunteer points:", error);
+            }
+
           } else {
             console.error("volunteer document does not exist.");
           }
@@ -56,6 +76,10 @@ export default function VolunteerNavbar() {
       if (user) {
         fetchVolunteerNotification();
       } else {
+        setNotifications([]);
+        setCitizenPoints(null);
+        setExp(0);
+        setLevel(1);
         setNotifications([]);
       }
     });
@@ -102,16 +126,42 @@ export default function VolunteerNavbar() {
         <span className="ml-2 text-xl font-bold text-green-600">EcoDrop</span>
       </div>
       <div className="flex items-center space-x-4">
-        <div className="flex items-center border border-gray-300 rounded-md">
-          <Input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-none"
-          />
-          <Search className="h-5 w-5 text-gray-500 mr-4" />
+        {/* EXP Progress Bar */}
+        <div className="relative flex items-center">
+          <div className="relative group">
+            <img 
+              src={`/${rank}.png`}
+              alt="Badge"
+              className="w-6 h-6 mr-2"
+            />
+
+            <div className="capitalize absolute left-1/2 transform -translate-x-1/2 top-full mt-2 hidden group-hover:block w-max px-3 py-1 bg-black text-white text-xs rounded-md shadow-lg z-10">
+                {rank}
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+            </div>
+          </div>
+
+            <div className="relative group">
+              {/* EXP Progress Bar */}
+              <div className="relative w-40 h-5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-800">
+                  Level {level}
+                </span>
+              </div>
+
+              {/* Tooltip (EXP / Total EXP) */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 hidden group-hover:block w-max px-3 py-1 bg-black text-white text-xs rounded-md shadow-lg z-10">
+                {exp} / {nextLevelExp} EXP
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+              </div>
+            </div>
         </div>
+
         <div className="relative">
           <button
             onClick={toggleDropdown}
