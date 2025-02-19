@@ -8,8 +8,16 @@ export default function LandingNavBar() {
             </div>
             <div className="Mid"></div>
             <div className="right mr-16 flex gap-6">
-                <button className="outline-none rounded-full bg-green-400 px-6 py-2 text-black font-black text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">Sign In</button>
-                <button className="outline-none rounded-full bg-green-400 px-6 py-2 text-black font-black text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">Sign Up</button>
+                <button className="outline-none rounded-full bg-green-400 px-6 py-2 text-black font-black text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">
+                    <a href="/sign-in">
+                        Sign In
+                    </a>
+                </button>
+                <button className="outline-none rounded-full bg-green-400 px-6 py-2 text-black font-black text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">
+                    <a href="/sign-up">
+                        Sign Up
+                    </a>
+                </button>
             </div>
         </div>
     )
