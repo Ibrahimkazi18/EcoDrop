@@ -7,6 +7,7 @@ import { createColumns, ReportColumn } from "./columns";
 import RequestClient from "./client";
 import { createNotification, createTask } from "@/hooks/create-report";
 import { useToast } from "@/hooks/use-toast";
+import { Loader } from "lucide-react";
 
 const RequestPage = ({
   params,
@@ -29,6 +30,7 @@ const RequestPage = ({
   const [reports, setReports] = useState<ReportColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { toast } = useToast();
 
@@ -52,6 +54,7 @@ const RequestPage = ({
         location: report.location,
         amount: report.amount,
         imageUrl: report.imageUrl,
+        userId: report.userId,
         createdAt: report.createdAt instanceof Date
         ? report.createdAt.toISOString().split("T")[0]
         : new Date(report.createdAt.seconds * 1000).toISOString().split("T")[0]
@@ -101,15 +104,27 @@ const RequestPage = ({
     await fetchVolunteersAndReports()
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+        <div className="pt-14 px-20 mx-auto flex items-center justify-center">
+            <Loader className="animate-spin h-8 w-8 "/>
+        </div>
+    )
+  }
   if (error) return <p>Error: {error}</p>;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchVolunteersAndReports();
+    setIsRefreshing(false);
+  };
 
   const columns = createColumns(openAssignModal);
 
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <RequestClient data={reports} columns={columns} />
+        <RequestClient data={reports} columns={columns} isRefreshing={isRefreshing} handleRefresh={handleRefresh} />
       </div>
 
       <Modal

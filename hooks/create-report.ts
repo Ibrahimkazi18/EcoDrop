@@ -1,7 +1,7 @@
 import { ReportColumn } from "@/app/(dashboard)/agency-dashboard/[agencyId]/requests/components/columns";
 import { db } from "@/lib/firebase";
 import { Agency, Citizen, ReportType, taskId, User, Volunteer } from "@/types-db";
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getDoc, getDocs, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { handleReportSubmission } from "./levelMainter";
 
@@ -56,7 +56,7 @@ export async function createReport (
           
           const pointsEarned = 10;      //Points gained after submitting report
 
-          await updateRewardPoints(userId, pointsEarned);
+          await updateRewardPoints(userId, pointsEarned, reportRef.id);
 
           await createTransaction(userId, "earned_report", pointsEarned, "Points earned from reporting waste.")
 
@@ -72,7 +72,7 @@ export async function createReport (
     }
 }
 
-export async function updateRewardPoints (userId : string, pointsToAdd : number) {
+export async function updateRewardPoints (userId : string, pointsToAdd : number, reportId: string) {
     try {
         const citizenRef = doc(db, "citizens", userId);
         const citizenDoc = await getDoc(citizenRef);
@@ -88,7 +88,7 @@ export async function updateRewardPoints (userId : string, pointsToAdd : number)
         const updatedTotalPoints = currentTotalPoints + pointsToAdd;
 
         await handleReportSubmission(userId);
-        await updateDoc(citizenRef, { points: updatedPoints, totalPoints: updatedTotalPoints });
+        await updateDoc(citizenRef, { points: updatedPoints, totalPoints: updatedTotalPoints, reports: arrayUnion(reportId) });
         
         return updatedPoints;
 
@@ -171,12 +171,28 @@ export async function createTask(agencyId: string, selectedReport: ReportColumn 
 }
 }
 
-export async function getReports(limitCount:number=10) {
+export async function updateTask (taskId: string, verificationImageUrl: string) {
+  try {
+    const taskRef = doc(db, "tasks", taskId);
+    const dateToBeAdded = Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    await updateDoc(taskRef, {
+      verificationImageUrl: verificationImageUrl,
+      citizenVerificationDeadline: dateToBeAdded,
+    })
+    console.log(`Task ${taskId} ${dateToBeAdded} updated successfully with verificationImageUrl.`);
+
+  } catch (error) {
+    console.error("Error updating task:", error);
+    throw new Error("Failed to update task");
+  } 
+}
+
+export async function getReports() {
     try {
 
         const reportsRef = collection(db, "reports");    
         
-        const reportsQuery = query(reportsRef, limit(limitCount));
+        const reportsQuery = query(reportsRef);
         
         const querySnapshot = await getDocs(reportsQuery);
         

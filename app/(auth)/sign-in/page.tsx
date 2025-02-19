@@ -77,7 +77,7 @@ export default function SignIn() {
           throw new Error("Agency ID not found");
         }
       } else if (userRole === "citizen") {
-        router.push("/citizen-dashboard");
+        router.push(`/citizen-dashboard/${user.uid}`);
       } else if (userRole === "volunteer") {
         if (agencyId) {
           router.push(`/${agencyId}/volunteer-dashboard`);

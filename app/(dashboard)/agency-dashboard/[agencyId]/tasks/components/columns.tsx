@@ -11,6 +11,7 @@ interface TaskReport {
     location: string
     createdAt: string;
     imageUrl: string;
+    userId: string;
 }
 
 export type TaskColumn = {

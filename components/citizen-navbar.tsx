@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Notification } from "@/types-db";
 import { SidebarTrigger } from "./ui/sidebar";
 import { getUserRank } from "@/hooks/levelMainter";
+import { useNavbar } from "@/app/context/navbarContext";
 
 export default function CitizenNavbar() {
   const [citizenPoints, setCitizenPoints] = useState<number | null>(null);
@@ -19,6 +20,7 @@ export default function CitizenNavbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { refreshNavbar } = useNavbar();  
 
   const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5)); 
 
@@ -69,7 +71,7 @@ export default function CitizenNavbar() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [refreshNavbar]);
 
   // Calculate progress percentage
   const nextLevelExp = getNextLevelExp(level);

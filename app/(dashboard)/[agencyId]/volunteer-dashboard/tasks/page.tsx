@@ -6,13 +6,18 @@ import Heading from "@/components/heading";
 import { Separator } from "@/components/ui/separator";
 import { onAuthStateChanged } from "firebase/auth";
 import { usePathname } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Loader, MessageSquarePlus, Upload } from "lucide-react";
+import { CheckCircle, Loader, MessageSquarePlus, Upload, XCircle } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getDownloadURL, getStorage, ref, uploadString } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
+import { useNavbar } from "@/app/context/navbarContext";
+import { computeImageHash } from "@/lib/utils";
+import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { createReport, updateTask, uploadImage } from "@/hooks/create-report";
+import { taskId } from "@/types-db";
 
 interface currVol {
   id : string;
@@ -21,29 +26,38 @@ interface currVol {
   agencyId: string;
 }
 
+interface verificationResult {
+  containsWaste: boolean;
+  confidence: number;
+}
+
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
-const TaskPage = ({params} : {params : {agencyId : string}}) => {   
+const TaskPage = ({params} : {params : {agencyId : string}}) => { 
+    const userId = auth.currentUser?.uid;  
+    const { triggerNavbarRefresh } = useNavbar();
     const [tasks, setTasks] = useState<TaskColumn[]>([]);
     const [currentVolunteer, setcurrentVolunteer] = useState<currVol>();
     const [assignedTask, setAssignedTask] = useState<TaskColumn | null>(null);
     const [loading, setLoading] = useState(true);
-
+    
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const pathName = usePathname() as string;
 
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
-
+    
     const [imageFile, setImageFile] = useState<File | null>(null);
-
+    
     const { toast } = useToast();
-  
+    
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [isDropping, setIsDropping] = useState(false);
     const [verificationStatus, setVerificationStatus ] = useState<
       'idle' | 'verifying' | 'success' | 'failure'
     >('idle');
-    const [verificationResult, setVerificationResult] = useState<number>(0);
+    const [verificationResult, setVerificationResult] = useState<verificationResult | null>(null);
 
   const fetchTasks = async () => {
     if (!currentUser) {
@@ -197,71 +211,124 @@ const handleTaskAccept = async () => {
 
   const handleVerify = async () => {
     if (!file) return;
-  
+
+    if (!geminiApiKey) {
+        console.error("Gemini API key is not configured");
+        return;
+    }
+
     setVerificationStatus("verifying");
 
     try {
+        const genAi = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAi.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 1024,
+            }
+        });
+
         const base64Data = await readFileAsBase64(file);
 
-        const fileName = `volunteer_${assignedTask?.id}_${Date.now()}.png`;
-
-        const volunteerImageUrl = await uploadImageAndGetUrl(base64Data, fileName);
-
-        if (!volunteerImageUrl) {
-          alert("Image upload failed. Please try again.");
-          return;
-        }
-        else{
-          console.log("VImage: ", volunteerImageUrl);
-        }
-          
-        const requestBody = JSON.stringify({
-            taskId: assignedTask?.id,  
-            citizenImageUrl: assignedTask?.report.imageUrl,
-            volunteerImageUrl: volunteerImageUrl,
-        });
-       
-        const response = await fetch("/api/verifyImage", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: requestBody,
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || "Image verification failed");
-        }
-
-        // Process verification result
-        console.log("Verification Result:", result);
-        if (result.success) {
-            setVerificationStatus("success");
+        // File size validation
+        const fileSizeInMB = file.size / (1024 * 1024);
+        if (fileSizeInMB > 4) {
             toast({
-              title: "Image verification successful!",
-              description: `You can now submit the form.`
-            })
-        } else {
+                title: "Size Limit Exceeded",
+                description: "File size must be less than 4MB",
+                variant: "destructive"
+            });
             setVerificationStatus("failure");
-            toast({
-              title: "Image verification failed",
-              description: `Please upload a correct image.`,
-              variant: "destructive"
-            })
+            return;
         }
+
+        const imageParts = [
+            {
+                inlineData: {
+                    data: base64Data.split(',')[1], 
+                    mimeType: file.type,
+                }
+            }
+        ];
+
+        const prompt = `You are an expert in waste detection. Analyze this image and determine whether there is visible waste. Respond in JSON format:
+        {
+            "containsWaste": true or false,
+            "confidence": confidence level as a number between 0 and 1
+        }`;
+
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }]
+        });
+
+        if (!result || !result.response) {
+            console.error("Invalid API response:", result);
+            toast({
+                title: "AI Response Error",
+                description: "Received an invalid response from Gemini AI.",
+                variant: "destructive"
+            });
+            setVerificationStatus("failure");
+            return;
+        }
+
+        let text = result.response.text().trim();
+
+        if (text.startsWith("```") && text.endsWith("```")) {
+            text = text.slice(7, -3).trim();
+        }
+
+        console.log("AI Response Text:", text); 
+
+        try {
+            const parseResult = JSON.parse(text);
+
+            if (parseResult.containsWaste !== undefined && parseResult.confidence !== undefined) {
+                if (!parseResult.containsWaste && parseResult.confidence >= 0.7) {
+                    setVerificationStatus("success");
+                    setVerificationResult(parseResult);
+                    toast({
+                        title: "Verification Success!",
+                        description: "Waste detected successfully.",
+                    });
+                } else {
+                    setVerificationStatus("failure");
+                    setVerificationResult(parseResult);
+                    const reason = parseResult.containsWaste 
+                        ? "Confidence level is below 70%." 
+                        : "Visible waste detected in the image.";
+
+                    toast({
+                        title: "Verification Failed",
+                        description: reason,
+                        variant: "destructive"
+                    });
+                }
+            } else {
+                throw new Error("Invalid response format from AI.");
+            }
+        } catch (error) {
+            console.error("Failed to parse JSON response:", error);
+            toast({
+                title: "Parsing Error",
+                description: "Invalid AI response format.",
+                variant: "destructive"
+            });
+            setVerificationStatus("failure");
+        }
+
     } catch (error: any) {
         console.error("Error verifying image:", error);
+
         toast({
-          title: "Image verification failed",
-          description: `Error: ${error.message}`,
-          variant: "destructive"
-        })
+            title: "Image verification failed",
+            description: `Error: ${error.message}`,
+            variant: "destructive"
+        });
         setVerificationStatus("failure");
     }
-};
-
+  };
 
   const readFileAsBase64 = (file: File) : Promise <string> => {
     return new Promise((resolve, reject) => {
@@ -272,7 +339,112 @@ const handleTaskAccept = async () => {
     })
   }
 
-  const handleSubmit = () => {}
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const droppedFile = e.dataTransfer.files[0];
+
+        if (droppedFile.size > 4 * 1024 * 1024) {
+            toast({
+                title: "Size Limit Exceeded",
+                description: "File size must be less than 4MB",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setFile(droppedFile);
+        setImageFile(droppedFile);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(droppedFile);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropping(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDropping(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDropping(false);
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if(verificationStatus != 'success' || !userId || !assignedTask){
+        toast({
+          title: "Something Went Wrong",
+          description: `Please verify the waste before submitting or login`,
+          variant: "destructive"
+        })
+        return;
+    }
+
+    setIsSubmitting(true);
+
+    if (!imageFile) return;
+
+    try {
+      const imageHash = await computeImageHash(imageFile);
+      const imageUrl = await uploadImage(imageFile, "taskImages");
+
+      const imagesRef = collection(db, "image_hashes"); 
+      const q = query(imagesRef, where("hash", "==", imageHash));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        toast({
+          title: "Image Already Exists",
+          description: `Cannot upload the same image for multiple reports.`,
+          variant: "destructive"
+        })
+        setVerificationStatus("failure");
+        return;
+      }
+
+      await updateTask(assignedTask.id, imageUrl);
+
+      await addDoc(imagesRef, { hash: imageHash, uploadedAt: new Date() });
+
+      setFile(null);
+      setPreview(null);
+      setVerificationStatus("idle");
+      setVerificationResult(null);
+
+      toast({
+        title: "Report Submitted Successfully!",
+        description: `You can see the status of the report in the table below`,
+      })
+
+      triggerNavbarRefresh();
+    } catch (error) {
+      console.error("Error creating report:", error);
+      toast({
+        title: "Report Failed",
+        description: `Failed to submit report. Please try again.`,
+        variant: "destructive"
+      })
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
     
   if(!isMounted) return null;
 
@@ -323,7 +495,7 @@ const handleTaskAccept = async () => {
                       </Button>
                     )}
 
-                    {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && assignedTask.volunteersAssigned.length > 1 && (
+                    {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && assignedTask.volunteersAssigned.length > 1 && !assignedTask.verificationImageUrl && (
                       <Button
                         className="flex justify-between space-x-2"
                       >
@@ -337,7 +509,13 @@ const handleTaskAccept = async () => {
                   </div>
                 </div>
 
-                {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && (
+                {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && assignedTask.verificationImageUrl && (
+                  <div className="mt-4 flex items-center justify-center">
+                    <p className="text-green-600 text-base capitalize">Waiting For Citizen Verification...</p>
+                  </div>
+                ) }
+
+                {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && !assignedTask.verificationImageUrl && (
                 <div>
                   <form onSubmit={handleSubmit} className="dark:bg-gray-800 bg-gray-50 p-8 rounded-2xl shadow-lg mb-4 mt-8">
                     <div className="mb-8">
@@ -345,7 +523,12 @@ const handleTaskAccept = async () => {
                             Upload Waste Image
                         </label>
 
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300">
+                        <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300 ${isDropping ? "border-green-500" : "border-gray-300"}`}
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                          onDragEnter={handleDragEnter}
+                          onDragLeave={handleDragLeave}
+                        >
                             <div className="space-y-1 text-center">
                                 <Upload className="mx-auto h-12 w-12 text-gray-600"/>
 
@@ -382,6 +565,47 @@ const handleTaskAccept = async () => {
                     ) : 'Verify Waste'}
                     </Button>
                      
+                    {verificationStatus === 'failure' && verificationResult && (
+                      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-8 rounded-r-xl">
+                        <div className="flex items-center">
+                          <XCircle className="h-6 w-6 text-red-400 mr-3" />
+                          <div>
+                            <h3 className="text-lg font-medium text-red-800">Verification Failure</h3>
+                            <div className="mt-2 text-sm text-red-700">
+                              <p>Contains Waste: {verificationResult.containsWaste ? "True" : "Flase"}</p>
+                              <p>Confidence: {(verificationResult.confidence * 100).toFixed(2)}%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {verificationStatus === 'success' && verificationResult && (
+                      <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-8 rounded-r-xl">
+                        <div className="flex items-center">
+                          <CheckCircle className="h-6 w-6 text-green-400 mr-3" />
+                          <div>
+                            <h3 className="text-lg font-medium text-green-800">Verification Successful</h3>
+                            <div className="mt-2 text-sm text-green-700">
+                              <p>Contains Waste: {verificationResult.containsWaste ? "True" : "Flase"}</p>
+                              <p>Confidence: {(verificationResult.confidence * 100).toFixed(2)}%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      type="submit" 
+                      className="w-full mb-8 bg-green-600 hover:bg-green-700 text-white py-3 text-lg rounded-xl transition-colors duration-300" 
+                      disabled={!file || verificationStatus === 'idle' && isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                          Submitting...
+                        </>
+                      ) : 'Submit'}
+                    </Button>
                   </form>
                 </div> )}
               </div>

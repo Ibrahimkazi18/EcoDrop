@@ -23,6 +23,8 @@ export interface Citizen extends User {
   level: number;
   exp: number;
   streak: number;
+  rank: "rookie" | "pro" | "expert" | "master";
+  reports: string[] | null;
   lastReportDate: Date | null;
 }
 
@@ -87,7 +89,7 @@ export interface taskId {
  completedBy ?: string | string[]
  citizenConfirmationStatus?: "pending" | "confirmed" | "notProperlyDone"
  citizenVerificationImageUrl?: string
- citizenVerificationDeadline?: Date
+ citizenVerificationDeadline?: Date | Timestamp
 }
 
 export interface VolunteerTask {

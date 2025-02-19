@@ -4,7 +4,7 @@ import { doc, runTransaction } from "firebase/firestore";
 const BASE_EXP = 100;
 const EXP_MULTIPLIER = 1.5;
 
-function getNextLevelExp(level: number) {
+export function getNextLevelExp(level: number) {
     return Math.floor(BASE_EXP * Math.pow(level, EXP_MULTIPLIER));
 } 
 

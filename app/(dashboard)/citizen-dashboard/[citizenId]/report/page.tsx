@@ -9,9 +9,9 @@ import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { User } from "@/types-db";
 import { computeImageHash } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useNavbar } from "@/app/context/navbarContext";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -19,6 +19,7 @@ const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 const ReportPage = () => { 
   const userId = auth.currentUser?.uid;
   const { toast } = useToast();
+  const { triggerNavbarRefresh } = useNavbar();
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -299,6 +300,7 @@ const ReportPage = () => {
               description: `You can see the status of the report in the table below`,
             })
 
+            triggerNavbarRefresh();
     } catch (error) {
         console.error("Error creating report:", error);
         toast({
@@ -357,50 +359,48 @@ const ReportPage = () => {
   };
 
 
-  useEffect(() => {
-    const fetchReports = async (userId : string) => {
-      try {
-        const reportsData = await getReportsCitizen(userId, 5); 
-        const formattedReports = reportsData.map((report) => ({
-          ...report,
-          createdAt: report.createdAt instanceof Date
-          ? report.createdAt.toISOString().split("T")[0]
-          : new Date(report.createdAt.seconds * 1000).toISOString().split("T")[0]
-        }));
-        setReports(formattedReports);
-      } catch (error) {
-        console.error("Error fetching reports:", error);
-      }
-    };
+  const fetchReports = async (userId : string) => {
+    try {
+      const reportsData = await getReportsCitizen(userId, 5); 
+      const formattedReports = reportsData.map((report) => ({
+        ...report,
+        createdAt: report.createdAt instanceof Date
+        ? report.createdAt.toISOString().split("T")[0]
+        : new Date(report.createdAt.seconds * 1000).toISOString().split("T")[0]
+      }));
+      setReports(formattedReports);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    }
+  };
 
-    const fetchUserData = async (uid: string) => {
-      try {
-        const userDocRef = doc(db, "citizens", uid);
-        const userDoc = await getDoc(userDocRef);
+  const fetchUserData = async (uid: string) => {
+    try {
+      const userDocRef = doc(db, "citizens", uid);
+      const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          await fetchReports(uid); 
-        } else {
-          console.error("User document does not exist.");
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-      if (firebaseUser) {
-        fetchUserData(firebaseUser.uid);
+      if (userDoc.exists()) {
+        await fetchReports(uid); 
       } else {
-        setReports([]);
-        console.error("User not logged in.");
+        console.error("User document does not exist.");
       }
-    });
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
 
+  const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+    if (firebaseUser) {
+      fetchUserData(firebaseUser.uid);
+    } else {
+      setReports([]);
+      console.error("User not logged in.");
+    }
+  });
+
+  useEffect(() => {
     return () => unsubscribe(); // Clean up the listener
   }, []);
-
 
   return (
     <div className="p-8 max-w-5xl mx-auto">

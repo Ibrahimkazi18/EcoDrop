@@ -24,7 +24,7 @@ export function AppSidebar() {
   const CitizenLabels = [
     {
       title: "Home",
-      url: "/citizen-dashboard",
+      url: "/citizen-dashboard/{citizenId}",
       icon: Home,
     },
     {

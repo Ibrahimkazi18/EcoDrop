@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { deleteUser } from './userManagement';
 import { compareTaskImages } from './imageComparision';
+import { autoVerify } from './autoVerify';
 
 // Initialize Firebase Admin once
 if (!admin.apps.length) {
@@ -8,4 +9,4 @@ if (!admin.apps.length) {
 }
 
 // Export your functions
-export { deleteUser, compareTaskImages };
+export { deleteUser, compareTaskImages, autoVerify };

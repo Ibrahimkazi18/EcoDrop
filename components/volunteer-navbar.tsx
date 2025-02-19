@@ -53,7 +53,6 @@ export default function VolunteerNavbar() {
 
             try {
                 const volunteerData = volunteerDoc.data();
-                console.log(volunteerData)
                 setCitizenPoints(volunteerData.points || 0);
                 setExp(volunteerData.exp || 0);
                 setLevel(volunteerData.level || 1);

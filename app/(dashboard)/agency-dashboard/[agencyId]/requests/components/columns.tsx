@@ -9,6 +9,7 @@ export type ReportColumn = {
   location: string;
   amount: string;
   imageUrl: string;
+  userId: string
   createdAt?: string;
 };
 

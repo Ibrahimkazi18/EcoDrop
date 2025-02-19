@@ -35,6 +35,22 @@ body {
   transition: width 0.3s ease-in-out;
 }
 
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.group:hover .transform-style-3d:hover {
+  transform: rotateY(30deg);
+}
+
+.group:hover .transform-style-3d:hover:active {
+  transform: rotateY(-30deg);
+}
 
 @layer base {
   :root {

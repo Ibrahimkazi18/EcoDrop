@@ -1,7 +1,6 @@
 "use client"
 
 import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { auth } from "@/lib/firebase"
 import { Agency, Citizen, Role, Volunteer } from "@/types-db"
 import { Label } from "@radix-ui/react-label"
 import { Select } from "@radix-ui/react-select"
@@ -9,51 +8,42 @@ import { Loader, User, Trophy, Crown, Award, RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
-    
     const [citizens, setCitizens] = useState<Citizen[] | null>(null);
     const [volunteers, setVolunteers] = useState<Volunteer[] | null>(null);
     const [agencies, setAgencies] = useState<Agency[] | null>(null);
-    const [user, setUser] = useState<Volunteer | null>(null);
-    const [role, setRole] = useState<Role>("volunteer");
+    const [user, setUser] = useState<Agency | null>(null);
+    const [role, setRole] = useState<Role>("agency");
     const [loading, setLoading] = useState<boolean>(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const fetchCitizenVolunteerAgency = async () => {
-        const userId = auth.currentUser?.uid;
-        if(userId) {
-            try {
-                const [citizensRes, agenciesRes, volunteersRes] = await Promise.all([
-                    fetch(`/api/getCitizens`),
-                    fetch(`/api/getAllAgencies`),
-                    fetch(`/api/getAllVolunteers`),
-                ]);
+        try {
+            const [citizensRes, agenciesRes, volunteersRes] = await Promise.all([
+                fetch(`/api/getCitizens`),
+                fetch(`/api/getAllAgencies`),
+                fetch(`/api/getAllVolunteers`),
+            ]);
+    
+            const citizensData = await citizensRes.json();
+            const agenciesData = await agenciesRes.json();
+            const volunteersData = await volunteersRes.json();
+    
+            if (!citizensRes.ok) throw new Error(citizensData.error || "Failed to fetch citizens");
+            if (!agenciesRes.ok) throw new Error(agenciesData.error || "Failed to fetch agencies");
+            if (!volunteersRes.ok) throw new Error(volunteersData.error || "Failed to fetch volunteers");
+    
+            const finalcitizens = citizensData.citizens as Citizen[];
+            const finalagencies = agenciesData.agencies as Agency[];
+            const finalvolunteers = volunteersData.volunteers as Volunteer[];
 
-                const [volunteerRes] = await Promise.all([
-                    fetch(`/api/getVolunteer?agencyId=${params.agencyId}&userId=${userId}`),
-                ]);
-        
-                const citizensData = await citizensRes.json();
-                const agenciesData = await agenciesRes.json();
-                const volunteersData = await volunteersRes.json();
-                const volunteerData = await volunteerRes.json();
-        
-                if (!citizensRes.ok) throw new Error(citizensData.error || "Failed to fetch citizens");
-                if (!agenciesRes.ok) throw new Error(agenciesData.error || "Failed to fetch agencies");
-                if (!volunteersRes.ok) throw new Error(volunteersData.error || "Failed to fetch volunteers");
-                if (!volunteerRes.ok) throw new Error(volunteerData.error || "Failed to fetch current volunteer");
-        
-                const finalcitizens = citizensData.citizens as Citizen[];
-                const finalagencies = agenciesData.agencies as Agency[];
-                const finalvolunteers = volunteersData.volunteers as Volunteer[];
-                const finalvolunteer = volunteerData.volunteer as Volunteer;
+            const thisUser = finalagencies.filter((agency) => agency.id === params.agencyId);
 
-                setUser(finalvolunteer);
-                setCitizens(finalcitizens);
-                setAgencies(finalagencies);
-                setVolunteers(finalvolunteers);
-            } catch (error) {
-                console.error("Error Fetching Citizens: ", error);
-            }
+            setUser(thisUser[0]);
+            setCitizens(finalcitizens);
+            setAgencies(finalagencies);
+            setVolunteers(finalvolunteers);
+        } catch (error) {
+            console.error("Error Fetching Citizens: ", error);
         }
     }
 
@@ -95,7 +85,8 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                         Refresh
                     </button>
 
-                    <Select onValueChange={(value) => setRole(value as Role)} required defaultValue="volunteer">
+                    <Label htmlFor="role" className="text-neutral-700">Role</Label>
+                    <Select onValueChange={(value) => setRole(value as Role)} required defaultValue="agency">
                         <SelectTrigger className="px-3 py-2 text-sm font-semibold rounded-lg w-full bg-indigo-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                         <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
@@ -103,8 +94,8 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                         <SelectGroup>
                             <SelectLabel>Roles</SelectLabel>
                             <SelectItem value="citizen">Citizen</SelectItem>
-                            <SelectItem value="volunteer">Volunteer</SelectItem>
                             <SelectItem value="agency">Agency</SelectItem>
+                            <SelectItem value="volunteer">Volunteer</SelectItem>
                         </SelectGroup>
                         </SelectContent>
                     </Select>
@@ -171,7 +162,7 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                             )) : role === "volunteer" ? volunteers?.map((volunteer, index) => (
                                 <tr 
                                     key={volunteer.id} 
-                                    className={`${user && user.volunteerId === volunteer.id ? 'bg-indigo-50 dark:bg-slate-700' : ''} hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-in-out`}
+                                    className={`${user && user.id === volunteer.id ? 'bg-indigo-50 dark:bg-slate-700' : ''} hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-in-out`}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
@@ -200,7 +191,7 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200">
-                                            Level {volunteer.level}
+                                            Level {volunteer.points}
                                         </span>
                                     </td>
                                 </tr>

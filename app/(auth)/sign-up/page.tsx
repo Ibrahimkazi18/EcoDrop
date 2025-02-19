@@ -101,12 +101,13 @@ export default function SignUp() {
         const q = query(volunteerRef, where("email", "==", email));
         const volunteerSnapshot = await getDocs(q);
 
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+
         if(!volunteerSnapshot.empty && role === "volunteer"){
           const volunteerDoc = volunteerSnapshot.docs[0];
           console.log(volunteerDoc.id)
 
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          const userId = userCredential.user.uid;
 
           const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
 
@@ -114,15 +115,12 @@ export default function SignUp() {
         }
 
         else {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          const userId = userCredential.user.uid;
-  
           const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: "",createdAt: date };
   
           await setDoc(doc(db, "users", userId), userData);
   
           if (role === "citizen") {
-              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, lastReportDate: null, communityIds: [""], badResponses: 0 };
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank:"rookie",lastReportDate: null, communityIds: [""], badResponses: 0, reports: [] };
               await setDoc(doc(db, "citizens", userId), citizenData);
   
           } else if (role === "agency") {
@@ -139,13 +137,12 @@ export default function SignUp() {
         });
 
         if (role === "agency") {
-            router.push("/agency-dashboard");
+            router.push(`/agency-dashboard/${userId}`);
         } else if (role === "citizen") {
-            router.push("/citizen-dashboard");
+            router.push(`/citizen-dashboard/${userId}`);
         } else if (role === "volunteer") {
             router.push(`/${agencyId}/volunteer-dashboard`);
         }
-  
 
     } catch (err: any) {
         setError(err.message);
