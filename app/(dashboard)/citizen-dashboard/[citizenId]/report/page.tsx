@@ -251,56 +251,56 @@ const ReportPage = () => {
     if (!imageFile) return;
 
     try {
-            const imageHash = await computeImageHash(imageFile);
+        const imageHash = await computeImageHash(imageFile);
 
-            const imagesRef = collection(db, "image_hashes"); 
-            const q = query(imagesRef, where("hash", "==", imageHash));
-            const querySnapshot = await getDocs(q);
+        const imagesRef = collection(db, "image_hashes"); 
+        const q = query(imagesRef, where("hash", "==", imageHash));
+        const querySnapshot = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-              toast({
-                title: "Image Already Exists",
-                description: `Cannot upload the same image for multiple reports.`,
-                variant: "destructive"
-              })
-              setVerificationStatus("failure");
-              return;
-            }
+        if (!querySnapshot.empty) {
+          toast({
+            title: "Image Already Exists",
+            description: `Cannot upload the same image for multiple reports.`,
+            variant: "destructive"
+          })
+          setVerificationStatus("failure");
+          return;
+        }
 
-            const report = await createReport(
-            userId, 
-            newReport.location, 
-            newReport.type, 
-            newReport.amount, 
-            imageFile || undefined,
-            verificationResult ? JSON.stringify(verificationResult) : undefined) as any;
+        const report = await createReport(
+        userId, 
+        newReport.location, 
+        newReport.type, 
+        newReport.amount, 
+        imageFile || undefined,
+        verificationResult ? JSON.stringify(verificationResult) : undefined) as any;
 
-            console.log(report)
+        console.log(report)
 
-            const formattedReport = {
-                id : report.id,
-                location : report.location,
-                wasteType : report.wasteType,
-                amount : report.amount,
-                status: report.status,
-                createdAt: report.createdAt.toDate().toISOString().split("T")[0],
-            }
+        const formattedReport = {
+            id : report.id,
+            location : report.location,
+            wasteType : report.wasteType,
+            amount : report.amount,
+            status: report.status,
+            createdAt: report.createdAt.toDate().toISOString().split("T")[0],
+        }
 
-            await addDoc(imagesRef, { hash: imageHash, uploadedAt: new Date() });
+        await addDoc(imagesRef, { hash: imageHash, uploadedAt: new Date() });
 
-            setReports([...reports, formattedReport]);
-            setNewReport({location: "", amount: "", type: ""});
-            setFile(null);
-            setPreview(null);
-            setVerificationStatus("idle");
-            setVerificationResult(null);
+        setReports([...reports, formattedReport]);
+        setNewReport({location: "", amount: "", type: ""});
+        setFile(null);
+        setPreview(null);
+        setVerificationStatus("idle");
+        setVerificationResult(null);
 
-            toast({
-              title: "Report Submitted Successfully!",
-              description: `You can see the status of the report in the table below`,
-            })
+        toast({
+          title: "Report Submitted Successfully!",
+          description: `You can see the status of the report in the table below`,
+        })
 
-            triggerNavbarRefresh();
+        triggerNavbarRefresh();
     } catch (error) {
         console.error("Error creating report:", error);
         toast({
@@ -399,7 +399,7 @@ const ReportPage = () => {
   });
 
   useEffect(() => {
-    return () => unsubscribe(); // Clean up the listener
+    return () => unsubscribe(); 
   }, []);
 
   return (

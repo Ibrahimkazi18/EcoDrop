@@ -21,6 +21,7 @@ import { Agency, Citizen, Role, User, Volunteer } from "@/types-db";
 import { setDoc, doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase"; 
 import { FaEye, FaEyeSlash } from "react-icons/fa"
+import { formatISO } from "date-fns";
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
@@ -68,7 +69,7 @@ export default function SignUp() {
                 return;
               }
 
-              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, lastReportDate: null});
+              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, lastReportDate: null, lastReset: formatISO(new Date()), pickupsToday: 0 });
             }
             else {
               setError("This email is not registered under the specified agency. Contact the agency for access.");

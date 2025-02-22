@@ -116,7 +116,7 @@ export default function SignIn() {
       if (userRole === "agency") {
         router.push(`/agency-dashboard/${agencyId}`);
       } else if (userRole === "citizen") {
-        router.push("/citizen-dashboard");
+        router.push(`/citizen-dashboard/${user.uid}`);
       } else if (userRole === "volunteer") {
         if (agencyId) {
           router.push(`/${agencyId}/volunteer-dashboard`);

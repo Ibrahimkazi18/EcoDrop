@@ -118,7 +118,7 @@ export default function VolunteerNavbar() {
   };
 
   return (
-    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[88.5rem]` : `w-[103.5rem]`} sticky top-0 z-50`}>
+    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[87.5rem]` : `w-[102.5rem]`} sticky top-0 z-50`}>
       <SidebarTrigger onClick={toggle}/>
       <div className="flex items-center">
         <Leaf color="green" />

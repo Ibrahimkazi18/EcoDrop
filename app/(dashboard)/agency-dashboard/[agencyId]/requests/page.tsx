@@ -11,13 +11,11 @@ const RequestPageWrapper = ({ params }: { params: { agencyId: string } }) => {
   const [selectedReport, setSelectedReport] = useState<ReportColumn | null>(null);
   const [selectedVolunteers, setSelectedVolunteers] = useState<Volunteer[]>([]);
 
-  // Function to open the modal and set the selected report
   const openAssignModal = (report: ReportColumn) => {
     setSelectedReport(report);
     setIsModalOpen(true);
   };
 
-  // Function to close the modal
   const closeAssignModal = () => {
     setIsModalOpen(false);
     setSelectedReport(null)

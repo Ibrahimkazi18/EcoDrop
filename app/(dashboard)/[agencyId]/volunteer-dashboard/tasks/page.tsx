@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { CheckCircle, Loader, MessageSquarePlus, Upload, XCircle } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getDownloadURL, getStorage, ref, uploadString } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { useNavbar } from "@/app/context/navbarContext";
 import { computeImageHash } from "@/lib/utils";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { createReport, updateTask, uploadImage } from "@/hooks/create-report";
-import { taskId } from "@/types-db";
+import { updateTask, uploadImage } from "@/hooks/create-report";
+import { useLoadScript, GoogleMap, DirectionsRenderer, TrafficLayer } from "@react-google-maps/api";
+import RealTimeNavigation from "./components/realTimeNavigation";
 
 interface currVol {
   id : string;
@@ -32,6 +32,7 @@ interface verificationResult {
 }
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string;
 
 const TaskPage = ({params} : {params : {agencyId : string}}) => { 
     const userId = auth.currentUser?.uid;  
@@ -58,6 +59,19 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
       'idle' | 'verifying' | 'success' | 'failure'
     >('idle');
     const [verificationResult, setVerificationResult] = useState<verificationResult | null>(null);
+
+    const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [destination, setDestination] = useState<{ lat: number; lng: number } | null>(null);
+    const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+    const [eta, setEta] = useState<string | null>(null);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  
+    const { isLoaded } = useLoadScript({
+      googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+      libraries: ["places"],
+    });
+  
 
   const fetchTasks = async () => {
     if (!currentUser) {
@@ -141,7 +155,6 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
     }
 }, [currentUser, params.agencyId]);
 
-
 const handleTaskAccept = async () => {
   try {
     if (!assignedTask) return;
@@ -167,6 +180,8 @@ const handleTaskAccept = async () => {
       description: `${assignedTask.id} has been accepted by you.`
     })
     fetchTasks();
+    getVolunteerLocation();
+    convertAddressToCoordinates(assignedTask.report.location);
   } catch (error) {
     console.error("Error accepting task:", error);
   }
@@ -195,19 +210,6 @@ const handleTaskAccept = async () => {
         reader.readAsDataURL(selectedFile);
     }
   };
-
-  const storage = getStorage();
-
-  async function uploadImageAndGetUrl(base64Image: string, fileName: string) {
-    try {
-        const storageRef = ref(storage, `taskImages/${fileName}`);
-        await uploadString(storageRef, base64Image, "data_url");
-        return await getDownloadURL(storageRef);
-    } catch (error) {
-        console.error("Error uploading image:", error);
-        return null;
-    }
-  }
 
   const handleVerify = async () => {
     if (!file) return;
@@ -445,6 +447,99 @@ const handleTaskAccept = async () => {
         setIsSubmitting(false);
     }
   }
+
+  const getVolunteerLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    if (!navigator.geolocation) return null;
+  
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const curr = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setCurrentLocation(curr);
+          resolve(curr);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          reject(null);
+        }
+      );
+    });
+  };
+
+  const convertAddressToCoordinates = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    if (!GOOGLE_MAPS_API_KEY || !address) return null;
+  
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+  
+      if (data.status === "OK") {
+        const location = data.results[0].geometry.location;
+        setDestination(location);
+        return location;
+      } else {
+        console.error("Geocoding error:", data.status);
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching geocode:", error);
+      return null;
+    }
+  };
+  
+
+  useEffect(() => {
+    if (currentLocation && destination) {
+      const directionsService = new google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: currentLocation,
+          destination: destination,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === "OK") setDirections(result);
+          else console.error("Error fetching directions:", status);
+        }
+      );
+    }
+  }, [currentLocation, destination]);
+
+  const startNavigation = async () => {
+    if (!assignedTask) return;
+
+    const curr = await getVolunteerLocation();
+    const dest = await convertAddressToCoordinates(assignedTask.report.location);
+
+    if (!curr || !dest) return;
+    setCurrentLocation(curr);
+    setDestination(dest);
+    setIsNavigating(true);
+    
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: curr,
+        destination: dest,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK" && result?.routes?.[0]?.legs?.[0]?.duration?.text) {
+          setDirections(result);
+          setEta(result.routes[0].legs[0].duration.text);
+        } else {
+          console.error("Error fetching directions:", status);
+        }
+      }
+    );
+  };
     
   if(!isMounted) return null;
 
@@ -516,7 +611,46 @@ const handleTaskAccept = async () => {
                 ) }
 
                 {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && !assignedTask.verificationImageUrl && (
+
                 <div>
+                  <div className="mt-4 p-4 border rounded-lg shadow">
+                    <h2 className="text-lg font-semibold">Current Task</h2>
+                    <p>Location: {assignedTask.report.location}</p>
+
+                    {!isNavigating ? (
+                      <button
+                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md"
+                        onClick={startNavigation}
+                      >
+                        Start Journey
+                      </button>
+                    ) : (
+                      <div className="mt-4">
+                        {eta && <p className="mb-2">Estimated Arrival Time: {eta}</p>}
+
+                        {isLoaded && (
+                          <GoogleMap
+                            center={currentLocation || { lat: 19.076, lng: 72.8777 }}
+                            zoom={14}
+                            mapContainerStyle={{ width: "100%", height: "400px" }}
+                            onLoad={(map) => setMapInstance(map)}
+                          >
+                            <TrafficLayer />
+                            {directions && <DirectionsRenderer directions={directions} />}
+
+                            {mapInstance && (
+                              <RealTimeNavigation
+                                mapInstance={mapInstance} // ✅ Pass the stored map instance
+                                volunteerLocation={currentLocation || { lat: 19.076, lng: 72.8777 }}
+                                destination={destination || { lat: 19.076, lng: 72.8777 }}
+                              />
+                            )}
+                          </GoogleMap>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <form onSubmit={handleSubmit} className="dark:bg-gray-800 bg-gray-50 p-8 rounded-2xl shadow-lg mb-4 mt-8">
                     <div className="mb-8">
                         <label htmlFor="waste-image" className="block text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
