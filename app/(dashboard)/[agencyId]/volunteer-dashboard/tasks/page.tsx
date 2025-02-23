@@ -640,9 +640,10 @@ const handleTaskAccept = async () => {
 
                             {mapInstance && (
                               <RealTimeNavigation
-                                mapInstance={mapInstance} // ✅ Pass the stored map instance
+                                mapInstance={mapInstance} // Pass the stored map instance
                                 volunteerLocation={currentLocation || { lat: 19.076, lng: 72.8777 }}
                                 destination={destination || { lat: 19.076, lng: 72.8777 }}
+                                setDirections={setDirections}
                               />
                             )}
                           </GoogleMap>

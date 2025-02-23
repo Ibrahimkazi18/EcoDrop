@@ -6,12 +6,14 @@ interface RealTimeNavigationProps {
   mapInstance: google.maps.Map;
   volunteerLocation: google.maps.LatLngLiteral;
   destination: google.maps.LatLngLiteral;
+  setDirections: (directions: google.maps.DirectionsResult | null) => void;
 }
 
 const RealTimeNavigation: React.FC<RealTimeNavigationProps> = ({
   mapInstance,
   volunteerLocation,
   destination,
+  setDirections,
 }) => {
   const [marker, setMarker] = useState<google.maps.Marker | null>(null);
   const [watchId, setWatchId] = useState<number | null>(null);
@@ -28,6 +30,7 @@ const RealTimeNavigation: React.FC<RealTimeNavigationProps> = ({
         fillColor: "#4285F4",
         fillOpacity: 1,
         strokeWeight: 2,
+        rotation: 0, // Initial rotation
       },
     });
 
@@ -54,6 +57,17 @@ const RealTimeNavigation: React.FC<RealTimeNavigationProps> = ({
       });
       if (step >= 20) clearInterval(interval);
     }, 50);
+
+    // Calculate the new heading
+    const heading = google.maps.geometry.spherical.computeHeading(startPosition, new google.maps.LatLng(newPosition)) as number;
+    marker.setIcon({
+      path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+      scale: 6,
+      fillColor: "#4285F4",
+      fillOpacity: 1,
+      strokeWeight: 2,
+      rotation: heading,
+    });
   };
 
   const startRealTimeTracking = () => {
@@ -69,6 +83,23 @@ const RealTimeNavigation: React.FC<RealTimeNavigationProps> = ({
         if (marker) {
           animateMarker(marker, newLocation);
         }
+
+        // Recalculate directions
+        const directionsService = new google.maps.DirectionsService();
+        directionsService.route(
+          {
+            origin: newLocation,
+            destination: destination,
+            travelMode: google.maps.TravelMode.DRIVING,
+          },
+          (result: any, status: any) => {
+            if (status === "OK") {
+              setDirections(result);
+            } else {
+              console.error("Error fetching directions:", status);
+            }
+          }
+        );
       },
       (error) => console.error("Error tracking location:", error),
       { enableHighAccuracy: true }

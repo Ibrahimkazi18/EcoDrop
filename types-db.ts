@@ -39,6 +39,7 @@ export interface Volunteer extends User {
   level: number;
   exp: number;
   streak: number;
+  rank: "rookie" | "pro" | "expert" | "master";
   lastUpdated ?: string;
   pickupsToday: number;
   lastReset: string;
