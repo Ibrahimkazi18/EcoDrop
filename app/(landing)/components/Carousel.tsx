@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect, ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "react-feather";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CarouselProps {
     children: ReactNode[];

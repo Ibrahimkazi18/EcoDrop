@@ -16,6 +16,7 @@ export default function VolunteerNavbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [citizenPoints, setCitizenPoints] = useState<number | null>(null);
   const [exp, setExp] = useState<number>(0);
+  const [points, setPoints] = useState<number>(0);
   const [level, setLevel] = useState<number>(1);
   const [rank, setRank] = useState<"rookie" | "pro" | "master" | "expert">("rookie");
 
@@ -55,6 +56,7 @@ export default function VolunteerNavbar() {
                 const volunteerData = volunteerDoc.data();
                 setCitizenPoints(volunteerData.points || 0);
                 setExp(volunteerData.exp || 0);
+                setPoints(volunteerData.points || 0);
                 setLevel(volunteerData.level || 1);
                 const getRank = getUserRank(level);
                 setRank(getRank);
@@ -118,7 +120,7 @@ export default function VolunteerNavbar() {
   };
 
   return (
-    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[88.5rem]` : `w-[103.5rem]`} sticky top-0 z-50`}>
+    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[87.5rem]` : `w-[102.5rem]`} sticky top-0 z-50`}>
       <SidebarTrigger onClick={toggle}/>
       <div className="flex items-center">
         <Leaf color="green" />
@@ -197,7 +199,7 @@ export default function VolunteerNavbar() {
         </div>
         <div className="flex items-center space-x-1">
           <Coins color="green" />
-          <span className="text-green-600">0</span> {/* Replace with dynamic points */}
+          <span className="text-green-600"> {points} </span> {/* Replace with dynamic points */}
         </div>
         <Button variant="outline" onClick={handleSignOut}>
           <LogOut className="h-5 w-5" />

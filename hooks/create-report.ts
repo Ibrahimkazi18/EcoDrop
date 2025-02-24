@@ -1,7 +1,7 @@
 import { ReportColumn } from "@/app/(dashboard)/agency-dashboard/[agencyId]/requests/components/columns";
 import { db } from "@/lib/firebase";
 import { Agency, Citizen, ReportType, taskId, User, Volunteer } from "@/types-db";
-import { addDoc, arrayUnion, collection, doc, getDoc, getDocs, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getDoc, getDocs, increment, limit, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { handleReportSubmission } from "./levelMainter";
 
@@ -161,7 +161,7 @@ export async function createTask(agencyId: string, selectedReport: ReportColumn 
 
       const volunteersUpdate = volunteers.map((volunteer) => {
         const volunteerRef = doc(db, `agencies/${agencyId}/volunteers`, volunteer.id);
-        return updateDoc(volunteerRef, {status: "assigned"});
+        return updateDoc(volunteerRef, {status: "assigned", pickupsToday: increment(1)});
       });
 
       await Promise.all(volunteersUpdate);
@@ -325,6 +325,43 @@ export async function getAllAgencies() {
   } catch (error) {
     console.error("Error fetching agencies:", error);
     throw new Error("Failed to fetch agencies");
+  }
+}
+
+export async function getAgency(agencyId: string) {
+  try {
+    const agencyRef = doc(db, "agencies", agencyId);
+    const agencySnap = await getDoc(agencyRef);
+
+    if (!agencySnap.exists()) {
+      throw new Error("Agency not found");
+    }
+
+    return { id: agencySnap.id, ...agencySnap.data() } as Agency;
+  } catch (error) {
+    console.error("Error fetching agency:", error);
+    throw new Error("Failed to fetch agency");
+  }
+}
+
+export async function getAgencyVolunteers(agencyId: string) {
+  try {
+    const volunteersRef = collection(db, `agencies/${agencyId}/volunteers`);    
+    
+    const volunteersQuery = query(volunteersRef);
+    
+    const querySnapshot = await getDocs(volunteersQuery);
+    
+    const volunteers = querySnapshot.docs.map((doc) => ({
+      id: doc.id, 
+      ...doc.data(), 
+    })) as Volunteer[];
+
+    return volunteers;
+
+  } catch (error) {
+    console.error("Error fetching volunteers:", error);
+    throw new Error("Failed to fetch volunteers");
   }
 }
 

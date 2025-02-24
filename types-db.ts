@@ -31,7 +31,7 @@ export interface Citizen extends User {
 export interface Volunteer extends User {
   role: "volunteer";
   agencyId: string;            
-  status: "available" | "working" | "unavailable";
+  status: "available" | "working" | "unavailable" | "assigned";
   tasksAssigned: string[];    
   hasSetPermanentPassword: boolean; 
   points: number;
@@ -39,6 +39,14 @@ export interface Volunteer extends User {
   level: number;
   exp: number;
   streak: number;
+  rank: "rookie" | "pro" | "expert" | "master";
+  lastUpdated ?: string;
+  pickupsToday: number;
+  lastReset: string;
+  location ?: {
+    lat: number,
+    lng: number,
+  };
   lastReportDate: Date | null;
 }
 

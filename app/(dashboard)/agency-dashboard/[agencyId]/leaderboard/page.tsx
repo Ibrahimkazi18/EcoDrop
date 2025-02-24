@@ -191,7 +191,7 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200">
-                                            Level {volunteer.points}
+                                            Level {volunteer.level}
                                         </span>
                                     </td>
                                 </tr>

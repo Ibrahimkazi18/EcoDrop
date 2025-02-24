@@ -3,7 +3,6 @@
 import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { auth } from "@/lib/firebase"
 import { Agency, Citizen, Role, Volunteer } from "@/types-db"
-import { Label } from "@radix-ui/react-label"
 import { Select } from "@radix-ui/react-select"
 import { Loader, User, Trophy, Crown, Award, RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
