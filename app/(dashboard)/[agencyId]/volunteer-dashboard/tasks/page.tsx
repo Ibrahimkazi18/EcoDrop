@@ -540,6 +540,14 @@ const handleTaskAccept = async () => {
       }
     );
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      triggerNavbarRefresh(); 
+    }, 60000); // 60000ms = 1 minute
+  
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
     
   if(!isMounted) return null;
 

@@ -8,6 +8,8 @@ import { Timestamp } from "firebase/firestore";
 import Heading from "@/components/heading";
 import { Separator } from "@/components/ui/separator";
 import { MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useNavbar } from "@/app/context/navbarContext";
 
 interface fTask {
    id: string
@@ -30,7 +32,9 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState<fTask | null>(null);
   const [completedTasks, setCompletedTasks] = useState<fTask[] | null>(null);
-
+  const { toast } = useToast();
+  const { triggerNavbarRefresh } = useNavbar();
+  
   const fetchTasks = async () => {
     try {
       const taskRes = await fetch(`/api/getTask?citizenId=${params.citizenId}`);
@@ -84,8 +88,7 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
             : new Date(task.createdAt), 
       }));
       
-      console.log("Formatted Completed Tasks:", formattedCompletedTasks);
-      setTask(formattedTasks[1]);
+      setTask(formattedTasks[0]);
       setCompletedTasks(formattedCompletedTasks);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -114,6 +117,24 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
 
   const handleApproval = async (isApproved: boolean) => {
     console.log("Task approved:", isApproved);
+    if(!task) return;
+
+    const res = await fetch(`/api/verifyTask?taskId=${task.id}&isApproved=${isApproved}`, {
+      method: "POST",
+    });
+
+    if (!res.ok) {
+      console.error("Failed to verify task:", res.statusText);
+    } else {
+      toast({
+        title: "Task Verified",
+        description: isApproved ? "The task has been verified successfully." : "The task has been rejected.",
+        variant: isApproved ? "default" : "destructive",
+      })
+      fetchTasks();
+    }
+
+    triggerNavbarRefresh();
   };
 
   if (loading) return <p>Loading...</p>;

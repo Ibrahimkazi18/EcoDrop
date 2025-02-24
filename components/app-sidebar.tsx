@@ -33,9 +33,9 @@ export function AppSidebar() {
       icon: MapPin,
     },
     {
-      title: "Notifications",
-      url: "/citizen-dashboard/{citizenId}/notifications",
-      icon: Calendar,
+      title: "Tasks",
+      url: "/citizen-dashboard/{citizenId}/tasks",
+      icon: ClipboardEdit,
     },
     {
       title: "Rewards",

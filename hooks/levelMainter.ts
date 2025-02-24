@@ -23,7 +23,7 @@ export async function handleReportSubmission(userId: string) {
         
         const userData = userDoc.data();
         console.log(userData);
-        const gainedExp = 50; 
+        const gainedExp = 20; 
         let { exp, level, points, streak, lastReportDate } = userData;
 
         exp += gainedExp;

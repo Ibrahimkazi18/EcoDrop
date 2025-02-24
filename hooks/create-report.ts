@@ -174,7 +174,7 @@ export async function createTask(agencyId: string, selectedReport: ReportColumn 
 export async function updateTask (taskId: string, verificationImageUrl: string) {
   try {
     const taskRef = doc(db, "tasks", taskId);
-    const dateToBeAdded = Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const dateToBeAdded = Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000));  //30 min from now
     await updateDoc(taskRef, {
       verificationImageUrl: verificationImageUrl,
       citizenVerificationDeadline: dateToBeAdded,
