@@ -28,13 +28,16 @@ const Carousel: React.FC<CarouselProps> = ({
     }, [autoSlide, autoSlideInterval, next]);
 
     return (
-        <div className="overflow-hidden relative w-[30vw]">
+        <div className="overflow-hidden relative w-full sm:w-[70vw] md:w-[50vw] lg:w-[30vw]">
+            {/* Slides Container */}
             <div
-                className="flex transition-transform ease-out duration-500 h-[500px] w-[30vw]"
+                className="flex transition-transform ease-out duration-500 h-[300px] sm:h-[400px] md:h-[500px] w-full"
                 style={{ transform: `translateX(-${curr * 100}%)` }}
             >
                 {slides}
             </div>
+
+            {/* Navigation Buttons */}
             <div className="absolute inset-0 flex items-center justify-between p-4">
                 <button
                     onClick={prev}
@@ -49,6 +52,8 @@ const Carousel: React.FC<CarouselProps> = ({
                     <ChevronRight />
                 </button>
             </div>
+
+            {/* Dots Indicator */}
             <div className="absolute bottom-4 right-0 left-0">
                 <div className="flex items-center justify-center gap-2">
                     {slides.map((_, i) => (
