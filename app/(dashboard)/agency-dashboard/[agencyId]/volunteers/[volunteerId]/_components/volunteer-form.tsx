@@ -39,6 +39,7 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
   const { toast } = useToast();
 
   const [isManualEntry, setIsManualEntry] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false);
   const [fileData, setFileData] = useState<{ username: string; email: string }[]>([]);
   const router = useRouter();
@@ -60,7 +61,6 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
       const volunteersRef = collection(db, `agencies/${agencyId}/volunteers`);
       const userRef = collection(db, "users");
   
-      // Query the collection to find any document that matches both username and email
       const volunteerQuery = query(
         volunteersRef,
         where("username", "==", username),
@@ -73,15 +73,14 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
         where("email", "==", email)
       );
   
-      // Execute the query
       const querySnapshot = await getDocs(volunteerQuery);
       const userSnapshot = await getDocs(userQuery);
   
-      if (querySnapshot.empty) {
-        return !userSnapshot.empty;
+      if (querySnapshot.empty && userSnapshot.empty) {
+        return false;
       }
   
-      return !querySnapshot.empty;
+      return true;
     } catch (error) {
       console.error("Error checking if volunteer exists:", error);
       return false;
@@ -94,15 +93,6 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
 
         const volunteerDoc = await addDoc(volunteersRef, volunteerData);
 
-        const volunteerId = volunteerDoc.id;
-
-        // Update the volunteers array in the agency document
-        const agencyDocRef = doc(db, "agencies", agencyId);
-        
-        await updateDoc(agencyDocRef, {
-          volunteers: arrayUnion(volunteerId)
-        });
-
         console.log("Volunteer added successfully!");
       } catch (error) {
           console.error("Error adding volunteer:", error);
@@ -111,21 +101,27 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      console.log("submitting")
-      console.log(agencyId)
       setIsLoading(true);
-
       data.createdAt = new Date();
 
-      console.log("before definition")
+      const volunteerExists = await checkVolunteerExists(data.username, data.email, agencyId);
+      console.log(volunteerExists);
 
-      console.log("before await")
+      if (volunteerExists) {
+        toast({
+          title: "Volunteer Already Exists",
+          description: "A Volunteer can only be created once and cannot be part of more than one agency.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       await addVolunteer(agencyId, data);
-      console.log("after await")
 
       toast({
         title: `${toastMessage}`,
       })
+
       router.refresh();
       router.push(`/agency-dashboard/${agencyId}/volunteers`);
     } catch (error) {
@@ -141,22 +137,13 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
   
   const fileSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      console.log("submitting")
-      console.log(agencyId)
       setIsLoading(true);
-
-      data.createdAt = new Date();
-
-      console.log("before definition")       
-
-      console.log("before await")
+      data.createdAt = new Date(); 
       await addVolunteer(agencyId, data);
-      console.log("after await")
 
       toast({
         title: `${data.username} Added to Volunteers`,
       })
-
     } catch (error) {
       toast({
         title: `${data.username} could not be Added to Volunteers`,
@@ -171,6 +158,14 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
   const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
+
+      const confirmUpload = window.confirm("Do you want to upload and process this file?");
+      if (!confirmUpload) {
+        setSelectedFile(null);
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);

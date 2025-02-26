@@ -7,10 +7,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Button } from "@/components/ui/button"
 import { MoreVertical, Trash } from "lucide-react"
 import { AlertModal } from "@/components/modal/alert-modal"
-import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore"
+import { collection, deleteDoc, doc, getDoc, getDocs, query, where } from "firebase/firestore"
 import { db, functions } from "@/lib/firebase"
 import { httpsCallable } from "firebase/functions"
 import { useToast } from "@/hooks/use-toast"
+import { Volunteer } from "@/types-db"
 
 interface CellActionProps {
     data : VolunteerColumn
@@ -33,26 +34,34 @@ const CellAction = ({ data } : CellActionProps) => {
 
       const parts = pathName.split("/");
       const agencyId = parts[2];
-      console.log(agencyId);
       const volunteerEmail = data.email
-      console.log(volunteerEmail);
       
       const volunteerQuery = query(collection(db, "users"), where("email", "==", volunteerEmail));
       const volunteerSnapshot = await getDocs(volunteerQuery);
       
       if (volunteerSnapshot.empty) {
-        
+        console.log("No Volunteer Found");    
         const volunteerQuery = query(collection(db, `agencies/${agencyId}/volunteers`), where("email", "==", volunteerEmail));
         const volunteerSnapshot = await getDocs(volunteerQuery);
         
         if(!volunteerSnapshot.empty){
           const volunteerDoc = volunteerSnapshot.docs[0];
           const volunteerId = volunteerDoc.id;
-          console.log(volunteerId);
-          
+          const volunteerData = volunteerDoc.data() as Volunteer;
+
+          const hasAssignedTasks = volunteerData.status === "assigned";
+
+          if (hasAssignedTasks) {
+            toast({
+              title: "Cannot Remove Volunteer",
+              description: "This volunteer has assigned tasks and cannot be deleted.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           const volunteerDocRef = doc(db, `agencies/${agencyId}/volunteers`, data.id);
           await deleteDoc(volunteerDocRef);
-          console.log(data.id);
         }
       }
       
@@ -61,6 +70,19 @@ const CellAction = ({ data } : CellActionProps) => {
           const volunteerId = volunteerDoc.id;
           
           const volunteerDocRef = doc(db, `agencies/${agencyId}/volunteers`, data.id);
+          const volunteerDataRef = await getDoc(volunteerDocRef);
+          const volunteerData = volunteerDataRef.data() as Volunteer;
+          const hasAssignedTasks = volunteerData.status === "assigned";
+
+          if (hasAssignedTasks) {
+            toast({
+              title: "Cannot Remove Volunteer",
+              description: "This volunteer has assigned tasks and cannot be deleted.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           await deleteDoc(volunteerDocRef);
           console.log(data.id);
 
@@ -83,7 +105,7 @@ const CellAction = ({ data } : CellActionProps) => {
           variant: "destructive"
         });
     } finally {
-        window.location.reload()
+        // window.location.reload()
         setIsLoading(false)
         setOpen(false)
     }

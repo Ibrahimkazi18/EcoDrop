@@ -9,7 +9,7 @@ export type VolunteerColumn = {
   id : string,
   username : string,
   email : string,        
-  status: "available" | "working" | "unavailable";      
+  status: "available" | "working" | "unavailable" | "assigned";      
   hasSetPermanentPassword: boolean;
   createdAt?: string,
 }
