@@ -1,3 +1,4 @@
+"use client";
 import HeroSection from "./components/HeroSection";
 import LandingAgencyInfo from "./components/LandingAgencyInfo";
 import LandingCrousel from "./components/LandingCrousel";
@@ -8,6 +9,7 @@ import LandingNavBar from "./components/LandingNavBar";
 import LandingSignUpNow from "./components/LandingSignUpNow";
 
 export default function Page() {
+
     return (
         <div className="pt-2">
             <LandingNavBar />
