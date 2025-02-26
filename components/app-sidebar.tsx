@@ -16,9 +16,13 @@ import ThemeChanger from "./ui/theme-changer"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import UserGreeting from "./user-greeting"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import useAuthStore from "@/store/authStore"
+import { useSidebar } from "@/app/context/sidebarContext"
+import { useUser } from "@/hooks/use-user"
+import { User } from "@/types-db"
+import { doc, getDoc } from "firebase/firestore"
 
 export function AppSidebar() {
   const CitizenLabels = [
@@ -46,7 +50,12 @@ export function AppSidebar() {
       title: "Leaderboard",
       url: "/citizen-dashboard/{citizenId}/leaderboard",
       icon: Trophy,
-  }
+    },
+    {
+      title: "Settings",
+      url: "/citizen-dashboard/{citizenId}/settings",
+      icon: Settings,
+    },
   ]
   
   const AgencyLabels = [
@@ -71,15 +80,15 @@ export function AppSidebar() {
       icon: Users,
     },
     {
-      title: "Notifications",
-      url: `/agency-dashboard/{agencyId}/notifications`,
-      icon: Bell,
-    },
-    {
       title: "Leaderboard",
       url: `/agency-dashboard/{agencyId}/leaderboard`,
       icon: Trophy,
     },
+    {
+      title: "Settings",
+      url: "/agency-dashboard/{agencyId}/settings",
+      icon: Settings,
+    }
   ]
   
   const VolunteerLabels = [
@@ -94,16 +103,6 @@ export function AppSidebar() {
         icon: Mail,
       },
       {
-        title: "Status",
-        url: `/{agencyId}/volunteer-dashboard/status`,
-        icon: Calendar,
-      },
-      {
-        title: "Notifications",
-        url: `/{agencyId}/volunteer-dashboard/notifications`,
-        icon: Search,
-      }, 
-      {
         title: "Rewards",
         url: `/{agencyId}/volunteer-dashboard/rewards`,
         icon: Gift,
@@ -112,39 +111,39 @@ export function AppSidebar() {
           title: "Leaderboard",
           url: `/{agencyId}/volunteer-dashboard/leaderboard`,
           icon: Trophy,
+      },
+      {
+        title: "Settings",
+        url: "/{agencyId}/volunteer-dashboard/settings",
+        icon: Settings,
       }
-  ]
-  
-  const settings = {
-      title: "Settings",
-      url: "/citizen-dashboard/settings",
-      icon: Settings,
-  }
-  
-  const agencySettings = {
-      title: "Settings",
-      url: "/agency-dashboard/settings",
-      icon: Settings,
-  }
-  
-  const volunteerSettings = {
-      title: "Settings",
-      url: `/{agencyId}/volunteer-dashboard/settings`,
-      icon: Settings,
-  }
-  
+  ]  
 
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [citizenId, setCitizenId] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const pathName = usePathname() as string;
   const setAuthData = useAuthStore((state) => state.setAuthData);
+  const { refreshSidebar } = useSidebar();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user.uid);
+    const fetchUser = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data() as User;
+          setUsername(data.username);
+        }
+      }
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (cuser) => {
+      if (cuser) {
+        fetchUser();
+        setCurrentUser(cuser.uid);  
   
         const parts = pathName.split("/");
         let extractedAgencyId = null;
@@ -155,7 +154,7 @@ export function AppSidebar() {
         } else if (pathName.includes("volunteer-dashboard") && parts.length > 1) {
           extractedAgencyId = parts[1];
         } else {
-          extractedCitizenId = user.uid;
+          extractedCitizenId = cuser.uid;
         }
   
         setAgencyId(extractedAgencyId);
@@ -163,7 +162,7 @@ export function AppSidebar() {
   
         // Ensure `setAuthData` is called only after state updates
         setTimeout(() => {
-          setAuthData(user.uid, extractedAgencyId);
+          setAuthData(cuser.uid, extractedAgencyId);
         }, 0);
       } else {
         setCurrentUser(null);
@@ -174,7 +173,7 @@ export function AppSidebar() {
     setIsMounted(true);
   
     return () => unsubscribe();
-  }, [pathName, setAuthData]);
+  }, [pathName, setAuthData, refreshSidebar]);
   
 
   useEffect(() => {
@@ -205,7 +204,11 @@ export function AppSidebar() {
                 <SidebarMenuItem className="list-none text-center flex">
                         <SidebarMenuButton asChild >
                             <>
-                                <UserGreeting />
+                                {username ? (
+                                  <h1>Welcome, {username}</h1>
+                                ) : (
+                                  <p>Not Found...</p>
+                                )}
                             </>
                         </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -217,7 +220,7 @@ export function AppSidebar() {
                 <SidebarGroupLabel>Application</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
+                            {items.map((item) => !(item.title === "Settings") && (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
                                         <a href={item.url}>
@@ -250,14 +253,16 @@ export function AppSidebar() {
 
         <SidebarFooter>
             <SidebarMenu>
+              {items.find((item) => item.title === "Settings") && (
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                        <a href={settings.url}>
-                            <settings.icon />
-                            <span>{settings.title}</span>
+                        <a href={items.find((item) => item.title === "Settings")?.url}>
+                            <Settings />
+                            <span className="text-base">Settings</span>
                         </a>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+              )}
             </SidebarMenu>
         </SidebarFooter> 
     </Sidebar>

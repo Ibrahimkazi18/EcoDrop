@@ -26,6 +26,7 @@ export interface Citizen extends User {
   rank: "rookie" | "pro" | "expert" | "master";
   reports: string[] | null;
   lastReportDate: Date | null;
+  address: string | null;
 }
 
 export interface Volunteer extends User {
@@ -48,6 +49,7 @@ export interface Volunteer extends User {
     lng: number,
   };
   lastReportDate: Date | null;
+  address: string | null;
 }
 
 export interface Agency extends User {
@@ -111,4 +113,12 @@ export interface Messages {
   senderId: string
   message: string
   createdAt: Date | Timestamp
+}
+
+export interface Rewards {
+  id: string
+  name: string
+  imageUrl: string
+  pointsRequired: number
+  stock: number
 }

@@ -2,6 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { NavbarProvider } from "../context/navbarContext";
 import DashboardClientWrapper from "@/components/DashboardClientWrapper"; 
+import { SidebarRefreshProvider } from "../context/sidebarContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -10,12 +11,14 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <NavbarProvider>
-      <SidebarProvider suppressHydrationWarning>
-        <AppSidebar />
-        <div>
-          <DashboardClientWrapper>{children}</DashboardClientWrapper>
-        </div>
-      </SidebarProvider>
+      <SidebarRefreshProvider>
+        <SidebarProvider suppressHydrationWarning>
+          <AppSidebar />
+          <div>
+            <DashboardClientWrapper>{children}</DashboardClientWrapper>
+          </div>
+        </SidebarProvider>
+      </SidebarRefreshProvider>
     </NavbarProvider>
   );
 };

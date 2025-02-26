@@ -69,7 +69,7 @@ export default function SignUp() {
                 return;
               }
 
-              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank: "rookie", lastReportDate: null, lastReset: formatISO(new Date()), pickupsToday: 0 });
+              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank: "rookie", lastReportDate: null, lastReset: formatISO(new Date()), pickupsToday: 0, address: null });
             }
             else {
               setError("This email is not registered under the specified agency. Contact the agency for access.");
@@ -121,7 +121,7 @@ export default function SignUp() {
           await setDoc(doc(db, "users", userId), userData);
   
           if (role === "citizen") {
-              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank:"rookie",lastReportDate: null, communityIds: [""], badResponses: 0, reports: [] };
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank:"rookie",lastReportDate: null, communityIds: [""], badResponses: 0, reports: [], address: null };
               await setDoc(doc(db, "citizens", userId), citizenData);
   
           } else if (role === "agency") {

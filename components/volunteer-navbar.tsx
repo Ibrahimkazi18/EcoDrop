@@ -8,6 +8,7 @@ import { auth, db } from "@/lib/firebase";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { getUserRank } from "@/hooks/levelMainter";
+import { useNavbar } from "@/app/context/navbarContext";
 
 export default function VolunteerNavbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -19,6 +20,7 @@ export default function VolunteerNavbar() {
   const [points, setPoints] = useState<number>(0);
   const [level, setLevel] = useState<number>(1);
   const [rank, setRank] = useState<"rookie" | "pro" | "master" | "expert">("rookie");
+  const { refreshNavbar } = useNavbar();
 
   const pathName = usePathname() as string;
   const parts = pathName.split("/");
@@ -86,7 +88,7 @@ export default function VolunteerNavbar() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [refreshNavbar]);
 
   const handleSignOut = async () => {
     await signOut(auth);

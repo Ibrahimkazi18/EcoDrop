@@ -7,9 +7,13 @@ import { ReportType } from "@/types-db";
 import { Timestamp } from "firebase/firestore";
 import Heading from "@/components/heading";
 import { Separator } from "@/components/ui/separator";
-import { MapPin } from "lucide-react";
+import { MapPin, Star, StarHalf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavbar } from "@/app/context/navbarContext";
+import { cn } from "@/lib/utils";
+import StarRating from "@/components/starRatings";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface fTask {
    id: string
@@ -34,6 +38,9 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
   const [completedTasks, setCompletedTasks] = useState<fTask[] | null>(null);
   const { toast } = useToast();
   const { triggerNavbarRefresh } = useNavbar();
+  const [submitted, setSubmitted] = useState<boolean>(false);
+  const [rating, setRating] = useState<number>(0);
+  const [modalOpen, setModalOpen] = useState(false);
   
   const fetchTasks = async () => {
     try {
@@ -116,9 +123,14 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
   }, [task]); 
 
   const handleApproval = async (isApproved: boolean) => {
-    console.log("Task approved:", isApproved);
     if(!task) return;
 
+    try {
+      await submitRating();
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      return;
+    }
     const res = await fetch(`/api/verifyTask?taskId=${task.id}&isApproved=${isApproved}`, {
       method: "POST",
     });
@@ -131,10 +143,20 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
         description: isApproved ? "The task has been verified successfully." : "The task has been rejected.",
         variant: isApproved ? "default" : "destructive",
       })
+      setModalOpen(false);
       fetchTasks();
     }
 
     triggerNavbarRefresh();
+  };
+
+  const submitRating = async () => {
+    if (!task || rating === 0) return;
+    await fetch(`/api/rateAgency?agencyId=${task.agencyId}&rating=${rating}`, {
+      method: "POST",
+    });
+    toast({ title: "Thank You!", description: "Your rating has been submitted." });
+    setSubmitted(true);
   };
 
   if (loading) return <p>Loading...</p>;
@@ -147,7 +169,7 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
       />
 
       {task ? (
-        <div className="p-16 border rounded-lg shadow-md">
+        <div className="p-10 mt-4 border rounded-lg shadow-md ">
           <h1 className="text-lg font-semibold mb-2">Task Verification</h1>
           <p className="text-gray-500">Time left: {timeLeft}</p>
           <div className="my-4">
@@ -160,7 +182,7 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
             />
           </div>
           <div className="flex gap-4">
-            <button onClick={() => handleApproval(true)} className="px-4 py-2 bg-green-500 text-white rounded-md">
+            <button onClick={() => setModalOpen(true)} className="px-4 py-2 bg-green-500 text-white rounded-md">
               Approve
             </button>
             <button onClick={() => handleApproval(false)} className="px-4 py-2 bg-red-500 text-white rounded-md">
@@ -174,6 +196,22 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
           <p className="">No Tasks Looking For Verification...</p>
         </div>
       )}
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogTitle>Rate the Agency</DialogTitle>
+          <DialogDescription>Click once for 1/2 star and twice for 1 complete star.</DialogDescription>
+          <div className="flex">
+            <StarRating onRate={setRating} />  <span className="opacity-50">({rating})</span>
+          </div>
+          <Button 
+            onClick={() => handleApproval(true)} 
+            className="px-4 py-2 bg-green-500 text-white font-bold hover:bg-white hover:text-green-500 rounded-md mt-6"
+          >
+            Confirm
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       <Separator className="my-12"/>
 

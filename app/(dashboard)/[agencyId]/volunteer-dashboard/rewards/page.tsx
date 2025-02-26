@@ -12,36 +12,43 @@ import Modal from "@/components/modal";
 import { useNavbar } from "@/app/context/navbarContext";
 import { createTransaction } from "@/hooks/create-report";
 
-const RewardsPage = () => {
+const RewardsPage = ({params} : { params : { agencyId : string }}) => {
   const [points, setPoints] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [rewards, setRewards] = useState<Rewards[]>([]);
   const [address, setAddress] = useState<string | null>("");
+  const [volunteerId, setVolunteerId] = useState<string>("");
   const [selectedReward, setSelectedReward] = useState<Rewards | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { triggerNavbarRefresh } = useNavbar();
 
   const { toast } = useToast();
 
-  const fetchCitizenData = async () => {
+  const fetchVolunteerData = async () => {
     setLoading(true);
     const currentUser = auth.currentUser;
     if (currentUser) {
       try {
-        const citizenDocRef = doc(db, "citizens", currentUser.uid);
-        const citizenDoc = await getDoc(citizenDocRef);
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if(!userDoc.exists()) return;
+        const userData = userDoc.data();
 
-        if (citizenDoc.exists()) {
-          const citizenData = citizenDoc.data();
-          setPoints(citizenData.points || 0);
-          setAddress(citizenData.address || "");
-          console.log(citizenData.points)
+        const volunteerDocRef = doc(db, `agencies/${params.agencyId}/volunteers`, userData.volunteerId);
+        setVolunteerId(userData.volunteerId);
+        const volunteerDoc = await getDoc(volunteerDocRef);
+
+        if (volunteerDoc.exists()) {
+          const volunteerData = volunteerDoc.data();
+          setPoints(volunteerData.points || 0);
+          setAddress(volunteerData.address || "");
+          console.log(volunteerData.points)
         } else {
-          console.error("Citizen document does not exist.");
+          console.error("volunteer document does not exist.");
         }
 
       } catch (error) {
-        console.error("Error fetching citizen or notification data:", error);
+        console.error("Error fetching volunteer or notification data:", error);
       }
     }
   };
@@ -60,7 +67,7 @@ const RewardsPage = () => {
   useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user) => {
         if (user) {
-          fetchCitizenData();
+          fetchVolunteerData();
           fetchRewards();
           setLoading(false);
         } else {
@@ -91,8 +98,8 @@ const RewardsPage = () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
         try {
-          const citizenRef = doc(db, "citizens", currentUser.uid);
-          await updateDoc(citizenRef, {
+          const volunteerRef = doc(db, `agencies/${params.agencyId}/volunteers`, volunteerId);
+          await updateDoc(volunteerRef, {
             points: points - selectedReward.pointsRequired,
             address: address,
           });
@@ -102,7 +109,7 @@ const RewardsPage = () => {
             description: "Your reward has been redeemed successfully.",
             variant: "default",
           })
-          await createTransaction(currentUser.uid, 'redeemed', selectedReward.pointsRequired, `Redeemed ${selectedReward.name}`);
+          await createTransaction(volunteerId, 'redeemed', selectedReward.pointsRequired, `Redeemed ${selectedReward.name}`);
           setPoints(points - selectedReward.pointsRequired);
           setAddress(address);
           setModalOpen(false);

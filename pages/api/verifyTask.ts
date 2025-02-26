@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const volunteerData = volunteerDoc.data();
               let { exp, level, pickupsToday, points } = volunteerData;
 
-              pickupsToday = (pickupsToday || 0) + 1;
+              pickupsToday = (pickupsToday || 0) - 1;
               points = (points || 0) + 15;
 
               const gainedExp = 50;

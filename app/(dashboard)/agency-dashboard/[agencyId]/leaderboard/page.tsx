@@ -4,7 +4,7 @@ import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, Sel
 import { Agency, Citizen, Role, Volunteer } from "@/types-db"
 import { Label } from "@radix-ui/react-label"
 import { Select } from "@radix-ui/react-select"
-import { Loader, User, Trophy, Crown, Award, RefreshCw } from "lucide-react"
+import { Loader, User, Trophy, Crown, Award, RefreshCw, Star } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
@@ -118,8 +118,8 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rank</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Points</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Level</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{role === "agency" ? "Rating" : "Points"}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{role === "agency" ? "No. of Ratings" : "Level"}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -221,13 +221,13 @@ const LeaderBoardPage = ({ params }: { params: { agencyId: string } }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                            <Award className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-2" />
+                                            <Star className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-2" />
                                             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{(agency.ratings.length > 0 ? (agency.ratings.reduce((acc, val) => acc + val, 0) / agency.ratings.length).toFixed(1) : "N/A").toLocaleString()}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200">
-                                            Level {agency.ratings.length > 0 ? (agency.ratings.reduce((acc, val) => acc + val, 0) / agency.ratings.length).toFixed(1) : "N/A"}
+                                            {agency.ratings.length} Ratings
                                         </span>
                                     </td>
                                 </tr>

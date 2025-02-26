@@ -30,7 +30,7 @@ export default function AgencyNavbar() {
         <span className="ml-2 text-xl font-bold text-green-600">EcoDrop</span>
       </div>
       <div className="flex items-center space-x-4">
-        <div className="flex items-center border border-gray-300 rounded-md">
+        {/* <div className="flex items-center border border-gray-300 rounded-md">
           <Input
             type="text"
             placeholder="Search..."
@@ -39,7 +39,7 @@ export default function AgencyNavbar() {
             className="border-none"
           />
           <Search className="h-5 w-5 text-gray-500 mr-4" />
-        </div>
+        </div> */}
         <div className="relative">
           <Bell className="h-5 w-5 text-gray-500" />
           {/* <span className="absolute top-0 right-0 h-2 w-2 bg-red-600 rounded-full" /> */}
