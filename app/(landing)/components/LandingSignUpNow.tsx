@@ -15,7 +15,7 @@ export default function LandingSignUpNow() {
                 />
                 <button className="outline-none rounded-full bg-green-400 p-3 sm:p-4 text-black font-black text-base sm:text-lg transition delay-100 ease-in-out hover:-translate-y-10 hover:scale-150 absolute top-[130px] sm:top-[240px] right-[10%] sm:right-[115px]">
                     <a href="/sign-up" className="flex items-center">
-                        <Recycle className="w-6 h-6 sm:w-8 sm:h-8" />
+                        <Recycle className="w-6 h-6 sm:w-8 sm:h-8 animate-spin" />
                     </a>
                 </button>
             </div>
@@ -29,7 +29,7 @@ export default function LandingSignUpNow() {
                 <p className="text-lg sm:text-xl md:text-2xl leading-7 sm:leading-8 md:leading-9 mb-8">
                     Efficiently dispose, manage, and recycle your electronic waste with eco-friendly solutions. Together, we can build a greener, cleaner future!
                 </p>
-                <button className="outline-none rounded-full bg-green-400 px-4 sm:px-6 py-2 text-black font-black text-base sm:text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">
+                <button className="animate-bounce outline-none rounded-full bg-green-400 px-4 sm:px-6 py-2 text-black font-black text-base sm:text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">
                     <a href="/sign-up" className="flex items-center">
                         Recycle Now
                     </a>

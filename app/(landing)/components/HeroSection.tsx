@@ -8,13 +8,13 @@ export default function HeroSection() {
                 <p className="text-lg md:text-2xl leading-7 md:leading-9 mb-8">Efficiently dispose, manage, and recycle your electronic waste with eco-friendly solutions. Together, we can build a greener, cleaner future!</p>
                 <button className="outline-none rounded-full bg-green-400 px-6 py-2 text-black font-black text-lg transition delay-100 ease-in-out hover:-translate-y-1 hover:scale-110">
                     <a href="/sign-up" className="flex items-center justify-center">
-                        <Recycle className="w-6 h-6 mr-2" />
+                        <Recycle className="w-6 h-6 mr-2 animate-spin" />
                         Recycle Now
                     </a>
                 </button>
             </div>
             <div className="right w-full md:w-[50%] flex justify-center md:justify-end items-center md:mr-16">
-                <Trees color="lightGreen" className="md:h-[500px] md:w-[500px]" height={300} width={300} />
+                <Trees color="lightGreen" className="animate-slower-bounce md:h-[500px] md:w-[500px]" height={300} width={300} />
             </div>
         </div>
     )
