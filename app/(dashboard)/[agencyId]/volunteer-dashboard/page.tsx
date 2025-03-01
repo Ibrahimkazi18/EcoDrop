@@ -107,7 +107,7 @@ const VolunteerDashboard = ({ params }: { params: { agencyId: string } }) => {
       <h2 className="text-2xl font-bold">Volunteer Stats</h2>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 text-center flex flex-col items-center justify-center h-full relative group perspective-1000 space-y-2">
+        <Card className="p-6 text-center flex flex-col shadow-[0px_0px_5px_1px_rgba(255,255,255,1)] items-center justify-center h-full relative group perspective-1000 space-y-2">
             <p className="text-xl font-semibold">Current Rank</p>
             {loading ? (
                 <Skeleton className="w-24 h-24" />
@@ -125,27 +125,27 @@ const VolunteerDashboard = ({ params }: { params: { agencyId: string } }) => {
 
         <div className="grid-rows-2 w-full col-span-2">
           <div className="grid grid-cols-2 gap-4 row-span-1">
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center shadow-[0px_0px_5px_1px_rgba(255,255,255,1)]">
               <p className="text-xl font-semibold">Tasks Completed</p>
               <div className="text-3xl">{loading ? <Skeleton className="w-16 h-8 mx-auto" /> : tasks}</div>
             </Card>
 
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center shadow-[0px_0px_5px_1px_rgba(255,255,255,1)]">
               <p className="text-xl font-semibold">Points Earned</p>
               <div className="text-3xl">{loading ? <Skeleton className="w-16 h-8 mx-auto" /> : points}</div>
             </Card>
           </div>
 
           {/* All Badges Section */}
-          <Card className="p-4 mt-4 h-40">
-            <h3 className="text-lg font-semibold">All Badges</h3>
-            <div className="grid grid-cols-4 gap-4 ">
+          <Card className="p-4 mt-4 h-40 shadow-[0px_0px_5px_1px_rgba(255,255,255,1)]">
+            <h3 className="text-lg font-semibold mb-2">All Badges</h3>
+            <div className="grid grid-cols-4 gap-4">
               {badgeData.map((badge, index) => (
                 <Dialog key={index}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" onClick={() => setSelectedBadge(badge)} className="flex flex-col items-center gap-2 h-[6.4rem]">
-                      <img src={badge.image} alt={badge.name} className="w-12 h-12 mt-1" />
-                      <span className="capitalize text-sm">{badge.name}</span>
+                    <Button variant="ghost" onClick={() => setSelectedBadge(badge)} className="flex flex-col items-center py-2 gap-1 h-[6.4rem]">
+                      <img src={badge.image} alt={badge.name} className="w-8 h-8 mt-1" />
+                      <span className="capitalize text-sm font-black">{badge.name}</span>
                       <span className="text-xs text-gray-500">Level {badge.level}</span>
                     </Button>
                   </DialogTrigger>
@@ -167,8 +167,8 @@ const VolunteerDashboard = ({ params }: { params: { agencyId: string } }) => {
       </div>
 
       {/* Graph Section */}
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold">Tasks Overview (Last 12 Months)</h3>
+      <div className="mt-8">
+        <h3 className="text-lgfont-semibold">Tasks Overview (Last 12 Months)</h3>
         {loading ? (
           <Skeleton className="w-full h-32 mt-4 bg-indigo-50 dark:fill-slate-700" />
         ) : (

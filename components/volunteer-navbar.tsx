@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button"; 
-import { Bell, Coins, Leaf, LogOut } from "lucide-react"; 
+import { Button } from "@/components/ui/button";
+import { Bell, Coins, Leaf, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { Notification, User } from "@/types-db";
@@ -24,7 +24,7 @@ export default function VolunteerNavbar() {
   const parts = pathName.split("/");
   const agencyId = parts[1];
 
-  const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5)); 
+  const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5));
   const nextLevelExp = getNextLevelExp(level);
   const progress = (exp / nextLevelExp) * 100;
 
@@ -53,13 +53,13 @@ export default function VolunteerNavbar() {
             setNotifications(notificationsData);
 
             try {
-                const volunteerData = volunteerDoc.data();
-                setCitizenPoints(volunteerData.points || 0);
-                setExp(volunteerData.exp || 0);
-                setPoints(volunteerData.points || 0);
-                setLevel(volunteerData.level || 1);
-                const getRank = getUserRank(level);
-                setRank(getRank);
+              const volunteerData = volunteerDoc.data();
+              setCitizenPoints(volunteerData.points || 0);
+              setExp(volunteerData.exp || 0);
+              setPoints(volunteerData.points || 0);
+              setLevel(volunteerData.level || 1);
+              const getRank = getUserRank(level);
+              setRank(getRank);
             } catch (error) {
               console.error("Error fetching volunteer points:", error);
             }
@@ -121,22 +121,21 @@ export default function VolunteerNavbar() {
 
   return (
     <nav
-      className={`flex items-center justify-between p-3 sm:p-4 dark:shadow-slate-900 shadow-md sticky top-0 z-50 w-[100vw] ${
-        isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
-      }`}
+      className={`flex items-center bg-black justify-between p-3 sm:p-4 shadow-md sticky top-0 z-50 w-[100vw] ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
+        }`}
     >
       <div className="flex items-center space-x-2">
         <SidebarTrigger onClick={toggle} className="block" />
         <div className="flex items-center">
-          <Leaf color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="ml-2 text-lg sm:text-xl font-bold text-green-600">EcoDrop</span>
+          <Leaf color="lightGreen" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="ml-2 text-lg sm:text-xl font-bold text-green-300">EcoDrop</span>
         </div>
       </div>
 
       <div className="hidden sm:flex items-center space-x-4">
         <div className="relative flex items-center">
           <div className="relative group">
-            <img 
+            <img
               src={`/${rank}.png`}
               alt="Badge"
               className="w-6 h-6 mr-2"
@@ -205,14 +204,14 @@ export default function VolunteerNavbar() {
 
         {/* Points Display */}
         <div className="flex items-center space-x-1">
-          <Coins color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-green-600 text-sm sm:text-base">
+          <Coins color="lightGreen" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="text-green-300 text-sm sm:text-base">
             {citizenPoints ?? "Loading..."}
           </span>
         </div>
 
         {/* Log Out Button */}
-        <Button variant="outline" onClick={handleSignOut} className="p-2 sm:p-3">
+        <Button variant="outline" onClick={handleSignOut} className="font-black p-2 sm:p-3">
           <LogOut className="h-5 w-5" />
           <span className="hidden sm:inline ml-2">Log Out</span>
         </Button>

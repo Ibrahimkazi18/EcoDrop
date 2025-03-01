@@ -198,14 +198,14 @@ export function AppSidebar() {
       }));
 
   return (
-    <Sidebar collapsible="icon">
-        <SidebarGroup>
+    <Sidebar collapsible="icon" >
+      <SidebarGroup>
             <SidebarGroupLabel>
                 <SidebarMenuItem className="list-none text-center flex">
                         <SidebarMenuButton asChild >
                             <>
                                 {username ? (
-                                  <h1>Welcome, {username}</h1>
+                                  <h1 className="text-xl mt-5">Welcome, {username}</h1>
                                 ) : (
                                   <p>Not Found...</p>
                                 )}
@@ -217,7 +217,7 @@ export function AppSidebar() {
 
         <SidebarContent>
             <SidebarGroup>
-                <SidebarGroupLabel>Application</SidebarGroupLabel>
+                <SidebarGroupLabel className="font-black">Application</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {items.map((item) => !(item.title === "Settings") && (
