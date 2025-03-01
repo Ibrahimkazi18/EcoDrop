@@ -2,12 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db, signInWithGoogle } from "@/lib/firebase"; 
+import { auth, db, signInWithGoogle } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { useToast } from "@/hooks/use-toast"; 
-import { Button } from "@/components/ui/button"; 
-import { Input } from "@/components/ui/input"; 
-import { Label } from "@/components/ui/label"; 
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { doc, getDoc } from "firebase/firestore";
 import { FaEye, FaEyeSlash } from "react-icons/fa"
@@ -15,7 +15,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"
 export default function SignIn() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [resetEmail, setResetEmail] = useState<string>(""); 
+  const [resetEmail, setResetEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -35,16 +35,16 @@ export default function SignIn() {
 
   const fetchUserRole = async (userId: string): Promise<{ role: string; agencyId?: string }> => {
     const userDocRef = doc(db, "users", userId);
-  
+
     try {
-      const userDoc = await getDoc(userDocRef); 
-  
+      const userDoc = await getDoc(userDocRef);
+
       if (userDoc.exists()) {
         const data = userDoc.data();
 
         return {
-          role : data?.role || "unknown",
-          agencyId : data?.agencyId ? data.agencyId : data.id || undefined
+          role: data?.role || "unknown",
+          agencyId: data?.agencyId ? data.agencyId : data.id || undefined
         }
       } else {
         console.log("No such document!");
@@ -59,7 +59,7 @@ export default function SignIn() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(""); 
+    setError("");
     const date = new Date();
 
     try {
@@ -69,7 +69,7 @@ export default function SignIn() {
       const { role: userRole, agencyId } = await fetchUserRole(user.uid);
 
       sessionStorage.setItem("user", "true");
-      
+
       if (userRole === "agency") {
         if (agencyId) {
           router.push(`/agency-dashboard/${agencyId}`);
@@ -149,7 +149,7 @@ export default function SignIn() {
       });
       return;
     }
-  
+
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({
@@ -166,22 +166,22 @@ export default function SignIn() {
       });
     }
   };
-  
+
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-[url(/sign-in.png)] bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-gray-50 p-8 rounded-3xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Log In to an Account
           </h2>
         </div>
-          
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email" className="text-black font-black">Email address</Label>
               <Input
                 id="email"
                 name="email"
@@ -195,7 +195,7 @@ export default function SignIn() {
               />
             </div>
             <div>
-              <Label htmlFor="password" className="text-neutral-700">Password</Label>
+              <Label htmlFor="password" className="text-black font-black">Password</Label>
               <div className="flex">
                 <Input
                   id="password"
@@ -211,16 +211,16 @@ export default function SignIn() {
                 <Button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="flex items-center text-neutral-700 bg-transparent focus:outline-none hover:bg-slate-700 hover:text-white"
+                  className="flex items-center bg-transparent text-neutral-700 focus:outline-none hover:bg-white hover:text-slate-700"
                   style={{ padding: '0 8px' }}
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}  
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </Button>
               </div>
             </div>
           </div>
           <div className="space-y-4">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full font-black bg-[#C1E3D6] hover:bg-[#84C7AE]">
               Log In
             </Button>
             <Button variant="outline" onClick={handleGoogleSignIn} className="w-full flex items-center justify-center">

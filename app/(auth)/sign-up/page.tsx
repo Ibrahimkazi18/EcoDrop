@@ -156,8 +156,8 @@ export default function SignUp() {
 };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8" >
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-[url(/sign-in.png)] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8" >
+      <div className="max-w-md w-full space-y-8 bg-gray-50 p-8 rounded-3xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign Up for an Account
@@ -167,7 +167,7 @@ export default function SignUp() {
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="username" className="text-neutral-700">{role === "agency" ? "Agency Name" : "Username"}</Label>
+              <Label htmlFor="username" className="text-neutral-700 font-black">{role === "agency" ? "Agency Name" : "Username"}</Label>
               <Input
                 id="username"
                 name="username"
@@ -180,7 +180,7 @@ export default function SignUp() {
               />
             </div>
             <div>
-              <Label htmlFor="email" className="text-neutral-700">Email address</Label>
+              <Label htmlFor="email" className="text-neutral-700 font-black">Email address</Label>
               <Input
                 id="email"
                 name="email"
@@ -196,7 +196,7 @@ export default function SignUp() {
 
             {role === "agency" ? 
               <div>
-                <Label htmlFor="contact" className="text-neutral-700">Contact</Label>
+                <Label htmlFor="contact" className="text-neutral-700 font-black">Contact</Label>
                 <Input
                   id="contact"
                   name="contact"
@@ -213,7 +213,7 @@ export default function SignUp() {
 
             {role === "agency" ? 
               <div>
-                <Label htmlFor="address" className="text-neutral-700">Address</Label>
+                <Label htmlFor="address" className="text-neutral-700 font-black">Address</Label>
                 <Input
                   id="address"
                   name="address"
@@ -228,7 +228,7 @@ export default function SignUp() {
               </div> : 
               (<></>)}
             <div>
-              <Label htmlFor="password" className="text-neutral-700">Password</Label>
+              <Label htmlFor="password" className="text-neutral-700 font-black">Password</Label>
               <div className="flex">
                 <Input
                   id="password"
@@ -254,7 +254,7 @@ export default function SignUp() {
 
             {role === "volunteer" ? 
               <div>
-                <Label htmlFor="agencyId" className="text-neutral-700">AgencyId</Label>
+                <Label htmlFor="agencyId" className="text-neutral-700 font-black">AgencyId</Label>
                 <Input
                   id="agencyId"
                   name="agencyId"
@@ -270,7 +270,7 @@ export default function SignUp() {
               (<></>)}
 
             <div>
-              <Label htmlFor="role" className="text-neutral-700">Select Role</Label>
+              <Label htmlFor="role" className="text-neutral-700 font-black">Select Role</Label>
               <Select onValueChange={(value) => setRole(value as Role)} required>
                 <SelectTrigger className="w-full bg-black">
                   <SelectValue placeholder="Select a role" />
@@ -287,7 +287,7 @@ export default function SignUp() {
             </div>
           </div>
           <div className="space-y-4">
-            <Button type="submit" className="w-full" variant={"outline"}>
+            <Button type="submit" className="w-full font-black bg-[#C1E3D6] hover:bg-[#84C7AE]">
               Sign Up
             </Button>
           </div>
