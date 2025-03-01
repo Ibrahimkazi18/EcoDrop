@@ -19,7 +19,8 @@ const Modal = ({ title, description, isOpen, onClose, children } : ModalProps) =
     }
   }  
   return (
-    <Dialog open={isOpen} onOpenChange={onChange}>
+    <div className="">
+    <Dialog open={isOpen} onOpenChange={onChange} >
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
@@ -32,6 +33,7 @@ const Modal = ({ title, description, isOpen, onClose, children } : ModalProps) =
             </div>
         </DialogContent>
     </Dialog>
+    </div>
   )
 }
 

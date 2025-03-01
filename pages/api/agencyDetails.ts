@@ -48,9 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const completedTasks = tasks.filter((task) => task.agencyId === agencyId && (task.completed === true));
     const totalTasks = tasks.filter((task) => task.agencyId === agencyId);
-    const ratings = parseFloat(
-        (agency.ratings.reduce((acc, val) => acc + val, 0) / agency.ratings.length).toFixed(1)
-    );      
+    const ratings = agency.ratings && agency.ratings.length > 0 
+      ? (agency.ratings.reduce((acc, val) => acc + val, 0) / agency.ratings.length).toFixed(1).toLocaleString() 
+      : "N/A";
     const tasksPending = tasks.filter((task) => task.agencyId === agencyId && (task.completed === false || task.citizenConfirmationStatus === "pending"));
     const taskVerified = completedTasks.length;
 
@@ -58,18 +58,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .map((vol) => ({
             id: vol.id,
             username: vol.username,
-            tasksCompleted: Math.floor(vol.totalPoints / 20), 
+            tasksCompleted: Math.floor(vol.totalPoints / 15), 
         }))
-        .sort((a, b) => b.tasksCompleted - a.tasksCompleted)
-        .slice(0, 5); // Get top 5 volunteers
-    
+        .sort((a, b) => (b.tasksCompleted || 0) - (a.tasksCompleted || 0))
+        .slice(0, 5);
+
     const monthsData = generateLast12MonthsData(completedTasks)
 
     res.status(200).json({ 
         tasksPending: tasksPending.length, 
         totalTasks: totalTasks.length, 
         agencyRating: ratings, 
-        totalVolunteers: agency.volunteers.length, 
+        totalVolunteers: volunteers?.length || 0, 
         tasksVerified: taskVerified,
         topVolunteers: topVolunteers,
         monthlyData: monthsData,

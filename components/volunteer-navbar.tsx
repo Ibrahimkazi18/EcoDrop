@@ -8,7 +8,6 @@ import { auth, db } from "@/lib/firebase";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { getUserRank } from "@/hooks/levelMainter";
-import { useNavbar } from "@/app/context/navbarContext";
 
 export default function VolunteerNavbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -20,7 +19,6 @@ export default function VolunteerNavbar() {
   const [points, setPoints] = useState<number>(0);
   const [level, setLevel] = useState<number>(1);
   const [rank, setRank] = useState<"rookie" | "pro" | "master" | "expert">("rookie");
-  const { refreshNavbar } = useNavbar();
 
   const pathName = usePathname() as string;
   const parts = pathName.split("/");
@@ -88,7 +86,7 @@ export default function VolunteerNavbar() {
     });
 
     return () => unsubscribe();
-  }, [refreshNavbar]);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -122,14 +120,20 @@ export default function VolunteerNavbar() {
   };
 
   return (
-    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[87.5rem]` : `w-[102.5rem]`} sticky top-0 z-50`}>
-      <SidebarTrigger onClick={toggle}/>
-      <div className="flex items-center">
-        <Leaf color="green" />
-        <span className="ml-2 text-xl font-bold text-green-600">EcoDrop</span>
+    <nav
+      className={`flex items-center justify-between p-3 sm:p-4 dark:shadow-slate-900 shadow-md sticky top-0 z-50 w-[100vw] ${
+        isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
+      }`}
+    >
+      <div className="flex items-center space-x-2">
+        <SidebarTrigger onClick={toggle} className="block" />
+        <div className="flex items-center">
+          <Leaf color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="ml-2 text-lg sm:text-xl font-bold text-green-600">EcoDrop</span>
+        </div>
       </div>
-      <div className="flex items-center space-x-4">
-        {/* EXP Progress Bar */}
+
+      <div className="hidden sm:flex items-center space-x-4">
         <div className="relative flex items-center">
           <div className="relative group">
             <img 
@@ -137,34 +141,33 @@ export default function VolunteerNavbar() {
               alt="Badge"
               className="w-6 h-6 mr-2"
             />
-
             <div className="capitalize absolute left-1/2 transform -translate-x-1/2 top-full mt-2 hidden group-hover:block w-max px-3 py-1 bg-black text-white text-xs rounded-md shadow-lg z-10">
-                {rank}
-                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+              {rank}
+              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
             </div>
           </div>
 
-            <div className="relative group">
-              {/* EXP Progress Bar */}
-              <div className="relative w-40 h-5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-green-500 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                ></div>
-
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-800">
-                  Level {level}
-                </span>
-              </div>
-
-              {/* Tooltip (EXP / Total EXP) */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 hidden group-hover:block w-max px-3 py-1 bg-black text-white text-xs rounded-md shadow-lg z-10">
-                {exp} / {nextLevelExp} EXP
-                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
-              </div>
+          <div className="relative group">
+            <div className="relative w-32 sm:w-40 h-5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-800">
+                Level {level}
+              </span>
             </div>
-        </div>
 
+            {/* Tooltip (EXP / Total EXP) */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 hidden group-hover:block w-max px-3 py-1 bg-black text-white text-xs rounded-md shadow-lg z-10">
+              {exp} / {nextLevelExp} EXP
+              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2 sm:space-x-4">
         <div className="relative">
           <button
             onClick={toggleDropdown}
@@ -199,13 +202,19 @@ export default function VolunteerNavbar() {
             </div>
           )}
         </div>
+
+        {/* Points Display */}
         <div className="flex items-center space-x-1">
-          <Coins color="green" />
-          <span className="text-green-600"> {points} </span> {/* Replace with dynamic points */}
+          <Coins color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="text-green-600 text-sm sm:text-base">
+            {citizenPoints ?? "Loading..."}
+          </span>
         </div>
-        <Button variant="outline" onClick={handleSignOut}>
+
+        {/* Log Out Button */}
+        <Button variant="outline" onClick={handleSignOut} className="p-2 sm:p-3">
           <LogOut className="h-5 w-5" />
-          Log Out
+          <span className="hidden sm:inline ml-2">Log Out</span>
         </Button>
       </div>
     </nav>
