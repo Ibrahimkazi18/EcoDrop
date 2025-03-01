@@ -162,7 +162,7 @@ const TaskVerification = ({ params }: { params: { citizenId: string } }) => {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="p-16 mx-auto">
+    <div className="p-6 md:p-16 mx-auto max-w-[26rem] sm:max-w-md md:max-w-lg lg:max-w-3xl xl:max-w-[80rem]">
       <Heading 
         title="Task Verification" 
         description="Verify the task completion by the volunteer."

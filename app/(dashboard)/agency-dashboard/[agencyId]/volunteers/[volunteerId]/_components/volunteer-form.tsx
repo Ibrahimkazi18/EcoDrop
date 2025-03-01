@@ -91,7 +91,9 @@ const VolunteerForm = ({ initialData, agencyId }: VolunteerFormProps) => {
     try {
         const volunteersRef = collection(db, `agencies/${agencyId}/volunteers`);
 
-        const volunteerDoc = await addDoc(volunteersRef, volunteerData);
+        const newVolunteer: Volunteer = {...volunteerData, hasSetPermanentPassword: false,  totalPoints: 0, points: 0, exp: 0, lastReportDate: null, lastUpdated: "", level: 1, pickupsToday: 4, rank: "rookie", status: "unavailable", streak: 0, address: "", };
+
+        const volunteerDoc = await addDoc(volunteersRef, newVolunteer);
 
         console.log("Volunteer added successfully!");
       } catch (error) {

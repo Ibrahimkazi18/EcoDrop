@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; 
 import { Label } from "@/components/ui/label"; 
 import { FcGoogle } from "react-icons/fc";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 
 export default function SignIn() {
@@ -56,6 +56,29 @@ export default function SignIn() {
     }
   };
 
+  const fetchUserByEmail = async (email: string): Promise<{ role: string; agencyId?: string }> => {
+    const usersRef = collection(db, "users");
+    const querySnapshot = await getDocs(usersRef);
+  
+    try {
+      const userDoc = querySnapshot.docs.find((doc) => doc.data().email === email); 
+  
+      if (userDoc) {
+        const data = userDoc.data();
+
+        return {
+          role: data?.role || "unknown",
+          agencyId: data?.agencyId ? data.agencyId : data.id || undefined
+        };
+      } else {
+        console.log("No such document!");
+        return { role: "unknown" };
+      }
+    } catch (error) {
+      console.error("Error fetching user by email:", error);
+      return { role: "unknown" };
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -108,22 +131,22 @@ export default function SignIn() {
     try {
       const result = await signInWithGoogle();
       const user = result.user;
-
       const { role: userRole, agencyId } = await fetchUserRole(user.uid);
-
+      
       sessionStorage.setItem("user", "true");
 
-      if (userRole === "agency") {
-        router.push(`/agency-dashboard/${agencyId}`);
-      } else if (userRole === "citizen") {
-        router.push(`/citizen-dashboard/${user.uid}`);
-      } else if (userRole === "volunteer") {
-        if (agencyId) {
-          router.push(`/${agencyId}/volunteer-dashboard`);
-        } else {
-          throw new Error("Agency ID not found");
+        if (userRole === "agency") {
+          router.push(`/agency-dashboard/${agencyId}`);
+        } else if (userRole === "citizen") {
+          router.push(`/citizen-dashboard/${user.uid}`);
+        } else if (userRole === "volunteer") {
+          if (agencyId) {
+            router.push(`/${agencyId}/volunteer-dashboard`);
+          } else {
+            console.log("error volunteer role");
+            throw new Error("Agency ID not found");
+          }
         }
-      }
 
       toast({
         title: "Google Sign In Successful",
@@ -253,7 +276,7 @@ export default function SignIn() {
       {showReset && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-md w-96">
-            <h3 className="text-lg font-bold mb-4">Reset Password</h3>
+            <h3 className="text-lg font-bold mb-4 text-black">Reset Password</h3>
             <Input
               type="email"
               placeholder="Enter your email"
