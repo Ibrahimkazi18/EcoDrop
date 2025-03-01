@@ -9,6 +9,21 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+		animation: {
+                'slower-bounce': 'slower-bounce 1.5s infinite', // Custom slower bounce animation
+            },
+            keyframes: {
+                'slower-bounce': {
+                    '0%, 100%': {
+                        transform: 'translateY(-25%)',
+                        animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+                    },
+                    '50%': {
+                        transform: 'translateY(0)',
+                        animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+                    },
+                },
+            },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
