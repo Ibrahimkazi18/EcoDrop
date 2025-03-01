@@ -22,9 +22,14 @@ import { setDoc, doc, collection, query, where, getDocs, updateDoc } from "fireb
 import { db } from "@/lib/firebase"; 
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 import { formatISO } from "date-fns";
+import { Resend } from "resend";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const resendApi = process.env.RESEND_API_KEY  as string;
 
 export default function SignUp() {
   const [email, setEmail] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [agencyId, setAgencyId] = useState<string>("");
@@ -34,12 +39,42 @@ export default function SignUp() {
   const [role, setRole] = useState<Role | "">(""); 
   const [error, setError] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false); 
+  const [otp, setOtp] = useState<string>(""); 
+  const [generatedOtp, setGeneratedOtp] = useState<string>(""); 
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState<boolean>(false); 
+  const [otpError, setOtpError] = useState<string>("");
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const generateOtp = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString(); 
+  };
+
+  const sendEmail = async (email: string, otp: string) => {
+    try {
+      console.log("Sending OTP email to:", email);
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: "ibirfkazi@gmail.com",
+          subject: 'Your OTP for Sign Up',
+          text: `Your OTP is: ${otp}`,
+        }),
+      });
+  
+      const result = await response.json();
+      console.log('OTP email sent:', result);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -48,6 +83,21 @@ export default function SignUp() {
   if (!isMounted) return null;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    if (!role) {
+      setError("Please select a role before signing up.");
+      return; 
+    }
+
+    const otp = generateOtp();
+    setGeneratedOtp(otp);
+    await sendEmail(email, otp);
+    setIsOtpModalOpen(true);
+  };
+
+  const handleSubmitSas = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     const date = new Date();
@@ -100,6 +150,7 @@ export default function SignUp() {
           
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const userId = userCredential.user.uid;
+        setUserId(userId);
 
         if (role === "volunteer") {
           const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
@@ -140,13 +191,12 @@ export default function SignUp() {
         });
 
         if (role === "agency") {
-            router.push(`/agency-dashboard/${userId}`);
+          router.push(`/agency-dashboard/${userId}`);
         } else if (role === "citizen") {
             router.push(`/citizen-dashboard/${userId}`);
         } else if (role === "volunteer") {
             router.push(`/${agencyId}/volunteer-dashboard`);
         }
-
     } catch (err: any) {
         setError(err.message);
         toast({
@@ -155,7 +205,133 @@ export default function SignUp() {
             variant: "destructive"
         });
     }
-};
+  };
+
+  const handleOtpSubmit = async () => {
+    if (otp === generatedOtp) {
+      setIsOtpModalOpen(false); 
+      setOtpError("");
+      const date = new Date();
+
+      try {
+        if(role === "volunteer"){
+            const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+            const emailQuery = query(volunteerRef, where("email", "==", email));
+            const volunteerSnapshot = await getDocs(emailQuery);
+
+            if(!volunteerSnapshot.empty){
+              const volunteerDoc = volunteerSnapshot.docs[0];
+              console.log(volunteerDoc.id)
+              const volunteerDocRef = volunteerSnapshot.docs[0].ref;
+              const volunteerData = volunteerSnapshot.docs[0].data() as Volunteer;
+
+              if(volunteerData.username !== username){
+                setError("Email is registered but the username does not match. Please check your details.");
+                return;
+              }
+
+              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank: "rookie", lastReportDate: null, lastReset: formatISO(new Date()), pickupsToday: 0, address: null });
+            }
+            else {
+              setError("This email is not registered under the specified agency. Contact the agency for access.");
+              return;
+            }
+        }
+
+        // Check if the email is already in use with a different role
+        const usersRef = collection(db, "users");
+        const emailQuery = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(emailQuery);
+
+        // If the query finds any documents, the email is already registered
+        if (!querySnapshot.empty) {
+            const existingUser = querySnapshot.docs[0].data(); 
+
+            // Check if the existing user's role is different from the selected role
+            if (existingUser.role !== role) {
+                setError("This email is already registered under another role. Please use a different email.");
+                return; 
+            }
+        }
+
+        if (!role) {
+            setError("Please select a role before signing up.");
+            return; 
+          }
+          
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+        setUserId(userId);
+
+        if (role === "volunteer") {
+          const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+          const q = query(volunteerRef, where("email", "==", email));
+          const volunteerSnapshot = await getDocs(q);
+
+          if(!volunteerSnapshot.empty){
+            const volunteerDoc = volunteerSnapshot.docs[0];
+            console.log(volunteerDoc.id)
+
+
+            const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
+
+            await setDoc(doc(db, "users", userId), userData);
+          }
+        }
+
+        else {
+          const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: "",createdAt: date };
+  
+          await setDoc(doc(db, "users", userId), userData);
+  
+          if (role === "citizen") {
+              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank:"rookie",lastReportDate: null, communityIds: [""], badResponses: 0, reports: [], address: null };
+              await setDoc(doc(db, "citizens", userId), citizenData);
+  
+          } else if (role === "agency") {
+              const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, contactInfo: { phone: contact, address: address }, volunteers: [""], ratings: [], badResults: 0, isBanned: false };
+              await setDoc(doc(db, "agencies", userId), agencyData);
+          } 
+        }
+
+        sessionStorage.setItem("user", "true");
+
+        toast({
+            title: "Sign Up Successful",
+            description: `${email} signed up at ${date.toLocaleString()}`,
+        });
+
+        if (role === "agency") {
+          router.push(`/agency-dashboard/${userId}`);
+        } else if (role === "citizen") {
+            router.push(`/citizen-dashboard/${userId}`);
+        } else if (role === "volunteer") {
+            router.push(`/${agencyId}/volunteer-dashboard`);
+        }
+    } catch (err: any) {
+        setError(err.message);
+        toast({
+            title: "Sign Up Unsuccessful",
+            description: `${email} could not sign up. Error: ${err.message}`,
+            variant: "destructive"
+        });
+    }
+      
+    } else {
+      setOtpError("Invalid OTP. Please try again.");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const newOtp = generateOtp();
+    setGeneratedOtp(newOtp);
+    await sendEmail(email, newOtp);
+    setOtpError(""); 
+    toast({
+      title: "OTP Resent",
+      description: "A new OTP has been sent to your email.",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[url(/sign-in.png)] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8" >
@@ -303,7 +479,34 @@ export default function SignUp() {
             Log In
           </a>
         </p>
+
       </div>
+      <Dialog open={isOtpModalOpen} onOpenChange={setIsOtpModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter OTP</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+            {otpError && <p className="text-red-500 text-sm">{otpError}</p>}
+            <Button onClick={handleOtpSubmit} className="w-full">
+              Verify OTP
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleResendOtp}
+              className="w-full"
+            >
+              Resend OTP
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
