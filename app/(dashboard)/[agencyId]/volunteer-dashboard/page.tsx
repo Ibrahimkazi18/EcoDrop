@@ -168,7 +168,7 @@ const VolunteerDashboard = ({ params }: { params: { agencyId: string } }) => {
 
       {/* Graph Section */}
       <div className="mt-8">
-        <h3 className="text-lgfont-semibold">Tasks Overview (Last 12 Months)</h3>
+        <h3 className="text-lg font-semibold">Tasks Overview (Last 12 Months)</h3>
         {loading ? (
           <Skeleton className="w-full h-32 mt-4 bg-indigo-50 dark:fill-slate-700" />
         ) : (
