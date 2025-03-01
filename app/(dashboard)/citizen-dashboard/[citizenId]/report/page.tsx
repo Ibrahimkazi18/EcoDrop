@@ -12,6 +12,7 @@ import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase
 import { computeImageHash } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavbar } from "@/app/context/navbarContext";
+import { AnyCnameRecord } from "node:dns";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -389,7 +390,7 @@ const ReportPage = () => {
     }
   };
 
-  const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+  const unsubscribe = auth.onAuthStateChanged((firebaseUser: any) => {
     if (firebaseUser) {
       fetchUserData(firebaseUser.uid);
     } else {

@@ -128,21 +128,19 @@ const RewardsPage = ({params} : { params : { agencyId : string }}) => {
   }
 
   return (
-    <div className="p-8 w-full mx-auto">   
+    <div className="p-4 sm:p-6 md:p-8 w-full mx-auto">
       <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-semibold mb-6 ml-0">Rewards</h1>
-
-        <div className="p-6 rounded-xl flex flex-col shadow-lg dark:shadow-slate-900 justify-between h-full border-l-4 border-green-500 mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            Reward Balance
-          </h2>
-
+        {/* Heading */}
+        <h1 className="text-2xl sm:text-3xl font-semibold mb-4 sm:mb-6">Rewards</h1>
+  
+        {/* Reward Balance Card */}
+        <div className="p-4 sm:p-6 rounded-xl flex flex-col shadow-lg dark:shadow-slate-900 justify-between h-full border-l-4 border-green-500 mb-6 sm:mb-8">
+          <h2 className="text-xl font-semibold mb-4">Reward Balance</h2>
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center">
-              <Coins className="w-10 h-10 mr-3 text-green-500"/>
-
+              <Coins className="w-8 h-8 sm:w-10 sm:h-10 mr-2 sm:mr-3 text-green-500" />
               <div>
-                <span className="text-4xl font-bold text-green-500">
+                <span className="text-3xl sm:text-4xl font-bold text-green-500">
                   {points}
                 </span>
                 <p className="text-sm">Redeemable Points</p>
@@ -150,15 +148,20 @@ const RewardsPage = ({params} : { params : { agencyId : string }}) => {
             </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {rewards.map(reward => (
+  
+        {/* Rewards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          {rewards.map((reward) => (
             <div key={reward.id} className="border rounded-lg shadow-md p-4 flex flex-col">
-              <img src={reward.imageUrl} alt={reward.name} className="w-full h-40 object-cover mb-4 rounded-lg" />
+              <img
+                src={reward.imageUrl}
+                alt={reward.name}
+                className="w-full h-40 object-cover mb-4 rounded-lg"
+              />
               <h3 className="text-lg font-semibold">{reward.name}</h3>
               <p className="text-green-600 font-bold mt-2">{reward.pointsRequired} Points</p>
-              <Button 
-                className="mt-1" 
+              <Button
+                className="mt-1"
                 disabled={points < reward.pointsRequired}
                 onClick={() => handleRedeem(reward)}
               >
@@ -168,12 +171,22 @@ const RewardsPage = ({params} : { params : { agencyId : string }}) => {
           ))}
         </div>
       </div>
-
+  
+      {/* Modal for Redemption Confirmation */}
       {modalOpen && selectedReward && (
-        <Modal onClose={() => setModalOpen(false)} title="Confirm Redemption" description="Please confirm your redemption." isOpen={modalOpen}>
+        <Modal
+          onClose={() => setModalOpen(false)}
+          title="Confirm Redemption"
+          description="Please confirm your redemption."
+          isOpen={modalOpen}
+        >
           <div className="p-6">
             <div className="flex">
-              <img src={selectedReward.imageUrl} alt={selectedReward.name} className="w-24 h-24 object-cover mr-4" />
+              <img
+                src={selectedReward.imageUrl}
+                alt={selectedReward.name}
+                className="w-24 h-24 object-cover mr-4"
+              />
               <div>
                 <h2 className="text-xl font-bold">{selectedReward.name}</h2>
               </div>
@@ -195,15 +208,20 @@ const RewardsPage = ({params} : { params : { agencyId : string }}) => {
                 <span>Points Required:</span> <span>{selectedReward.pointsRequired}</span>
               </p>
               <p className="flex items-center justify-between">
-                <span>Remaining Points:</span> <span>{points! - selectedReward.pointsRequired}</span>
+                <span>Remaining Points:</span> <span>{points - selectedReward.pointsRequired}</span>
               </p>
             </div>
-            <Button onClick={confirmRedemption} className="mt-4 w-full bg-green-500 text-white font-bold hover:bg-white hover:text-green-500">Redeem</Button>
+            <Button
+              onClick={confirmRedemption}
+              className="mt-4 w-full bg-green-500 text-white font-bold hover:bg-white hover:text-green-500"
+            >
+              Redeem
+            </Button>
           </div>
         </Modal>
       )}
     </div>
-  )
+  );
 }
 
 export default RewardsPage

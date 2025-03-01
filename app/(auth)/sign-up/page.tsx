@@ -96,23 +96,25 @@ export default function SignUp() {
         if (!role) {
             setError("Please select a role before signing up.");
             return; 
-        }
-
-        const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
-        const q = query(volunteerRef, where("email", "==", email));
-        const volunteerSnapshot = await getDocs(q);
-
+          }
+          
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const userId = userCredential.user.uid;
 
-        if(!volunteerSnapshot.empty && role === "volunteer"){
-          const volunteerDoc = volunteerSnapshot.docs[0];
-          console.log(volunteerDoc.id)
+        if (role === "volunteer") {
+          const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
+          const q = query(volunteerRef, where("email", "==", email));
+          const volunteerSnapshot = await getDocs(q);
+
+          if(!volunteerSnapshot.empty){
+            const volunteerDoc = volunteerSnapshot.docs[0];
+            console.log(volunteerDoc.id)
 
 
-          const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
+            const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
 
-          await setDoc(doc(db, "users", userId), userData);
+            await setDoc(doc(db, "users", userId), userData);
+          }
         }
 
         else {

@@ -14,7 +14,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/hooks/use-toast";
 import { useNavbar } from "@/app/context/navbarContext";
 import { computeImageHash } from "@/lib/utils";
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { updateTask, uploadImage } from "@/hooks/create-report";
 import { useLoadScript, GoogleMap, DirectionsRenderer, TrafficLayer } from "@react-google-maps/api";
 import RealTimeNavigation from "./components/realTimeNavigation";
@@ -66,6 +66,7 @@ const TaskPage = ({params} : {params : {agencyId : string}}) => {
     const [eta, setEta] = useState<string | null>(null);
     const [isNavigating, setIsNavigating] = useState(false);
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+    const [forceRender, setForceRender] = useState(false);
   
     const { isLoaded } = useLoadScript({
       googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -386,6 +387,23 @@ const handleTaskAccept = async () => {
       setIsDropping(false);
   };
 
+  const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; 
+    const toRadians = (deg: number) => (deg * Math.PI) / 180;
+    
+    const φ1 = toRadians(lat1);
+    const φ2 = toRadians(lat2);
+    const Δφ = toRadians(lat2 - lat1);
+    const Δλ = toRadians(lon2 - lon1);
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; 
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,6 +422,37 @@ const handleTaskAccept = async () => {
     if (!imageFile) return;
 
     try {
+      console.log("started")
+      const cur = await getVolunteerLocationFromFirestore(currentVolunteer?.id || "");
+      console.log("got cur")
+      const dest = await convertAddressToCoordinates(assignedTask.report.location);
+      console.log("got dest")
+
+      if (!cur || !dest) {
+        toast({
+          title: "Location Error",
+          description: `Failed to get your current location. Please enable location services.`,
+          variant: "destructive"
+        })
+        setIsSubmitting(false);
+        return;
+      }
+
+      const distance = getDistanceInMeters(cur.lat, cur.lng, dest.lat, dest.lng);
+      const THRESHOLD_DISTANCE = 50; 
+
+      console.log(distance)
+      console.log(cur)
+      console.log(dest)
+
+      if (distance > THRESHOLD_DISTANCE) {
+        toast({
+          title: "False Report Submission",
+          description: `You are too far from the waste location! Please submit from the correct place.`,
+          variant: "destructive"
+        })
+      }
+
       const imageHash = await computeImageHash(imageFile);
       const imageUrl = await uploadImage(imageFile, "taskImages");
 
@@ -448,26 +497,82 @@ const handleTaskAccept = async () => {
     }
   }
 
+  const getVolunteerLocationFromFirestore = async (volunteerId: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      console.log("volunteerId" ,volunteerId)
+      const volunteerRef = doc(db, `agencies/${params.agencyId}/volunteers`, volunteerId);
+      const volunteerDoc = await getDoc(volunteerRef);
+
+      if (volunteerDoc.exists()) {
+        const volunteerData = volunteerDoc.data();
+        if (volunteerData.location) {
+          return volunteerData.location;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching volunteer location from Firestore:", error);
+      return null;
+    }
+  };
+
   const getVolunteerLocation = async (): Promise<{ lat: number; lng: number } | null> => {
-    if (!navigator.geolocation) return null;
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported by this browser.");
+      return getIPBasedLocation(); // Fallback to IP-based location
+    }
   
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const curr = { lat: position.coords.latitude, lng: position.coords.longitude };
-          setCurrentLocation(curr);
+          console.log("Current Location:", curr);
           resolve(curr);
         },
-        (error) => {
+        async (error) => {
           console.error("Error getting location:", error);
-          reject(null);
+          const ipLocation = await getIPBasedLocation(); // Fallback to IP-based location
+          if (ipLocation) {
+            resolve(ipLocation);
+          } else {
+            reject(null);
+          }
+        },
+        {
+          enableHighAccuracy: true, // Enable high-accuracy mode
+          timeout: 30000, // Wait up to 30 seconds
+          maximumAge: 0, // Do not use cached locations
         }
       );
     });
   };
 
+  const getIPBasedLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const response = await fetch("https://ipapi.co/json/");
+      const data = await response.json();
+      if (data.latitude && data.longitude) {
+        return { lat: data.latitude, lng: data.longitude };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching IP-based location:", error);
+      return null;
+    }
+  };
+
   const convertAddressToCoordinates = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     if (!GOOGLE_MAPS_API_KEY || !address) return null;
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      console.log("Google Maps API key is not configured");
+      return null
+    };
+
+    if (!address) {
+      console.log("Address is not provided");
+      return null
+    };
   
     try {
       const response = await fetch(
@@ -479,9 +584,11 @@ const handleTaskAccept = async () => {
       }
   
       const data = await response.json();
+      console.log("Geocoding API Response:", data);
   
       if (data.status === "OK") {
         const location = data.results[0].geometry.location;
+        console.log("Destination Coordinates:", location);
         setDestination(location);
         return location;
       } else {
@@ -493,7 +600,6 @@ const handleTaskAccept = async () => {
       return null;
     }
   };
-  
 
   useEffect(() => {
     if (currentLocation && destination) {
@@ -515,30 +621,45 @@ const handleTaskAccept = async () => {
   const startNavigation = async () => {
     if (!assignedTask) return;
 
-    const curr = await getVolunteerLocation();
-    const dest = await convertAddressToCoordinates(assignedTask.report.location);
+    try {
+      const cur = await getVolunteerLocationFromFirestore(currentVolunteer?.id || "");
+      const dest = await convertAddressToCoordinates(assignedTask.report.location);
 
-    if (!curr || !dest) return;
-    setCurrentLocation(curr);
-    setDestination(dest);
-    setIsNavigating(true);
-    
-    const directionsService = new google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: curr,
-        destination: dest,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK" && result?.routes?.[0]?.legs?.[0]?.duration?.text) {
-          setDirections(result);
-          setEta(result.routes[0].legs[0].duration.text);
-        } else {
-          console.error("Error fetching directions:", status);
-        }
+      if (!cur || !dest) {
+        toast({
+          title: "Location Error",
+          description: "Failed to get your current location or destination.",
+          variant: "destructive",
+        });
+        return;
       }
-    );
+
+      setCurrentLocation(cur);
+      setDestination(dest);
+      setIsNavigating(true);
+
+      // Force re-render
+      setForceRender((prev) => !prev);
+
+      const directionsService = new google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: cur,
+          destination: dest,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === "OK" && result?.routes?.[0]?.legs?.[0]?.duration?.text) {
+            setDirections(result);
+            setEta(result.routes[0].legs[0].duration.text);
+          } else {
+            console.error("Error fetching directions:", status);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error starting navigation:", error);
+    }
   };
 
   useEffect(() => {
@@ -554,9 +675,9 @@ const handleTaskAccept = async () => {
   if (loading) return <p>Loading tasks...</p>;
 
   if (!tasks || tasks.length === 0 && !assignedTask) return <p>No tasks available.</p>;
-
+  
   return (
-    <div className="flex-col">
+    <div className="flex-col p-1 lg:p-8 mx-auto max-w-[28rem] sm:max-w-md md:max-w-lg lg:max-w-3xl xl:max-w-6xl">
       <div className="flex-1 space-y-4 p-16 pt-6">
         <div className="mb-6">
           {assignedTask ? 
