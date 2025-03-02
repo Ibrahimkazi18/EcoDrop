@@ -1,5 +1,6 @@
 "use client";
 import HeroSection from "./components/HeroSection";
+import LandingAboutAgency from "./components/LandingAboutAgency";
 import LandingAgencyInfo from "./components/LandingAgencyInfo";
 import LandingCrousel from "./components/LandingCrousel";
 import LandingDivider from "./components/LandingDivider";
@@ -19,6 +20,7 @@ export default function Page() {
             </div>
             <LandingAgencyInfo />
             <LandingLocationsCovered />
+            <LandingAboutAgency />
             <div className="px-32 my-32">
                 <LandingDivider />
             </div>
