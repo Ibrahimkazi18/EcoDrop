@@ -195,7 +195,7 @@ const ResellListings = ({ params }: { params: { citizenId: string } }) => {
             <h2 className="text-lg font-semibold mt-2">Model: {listing.model}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">Years Old: {listing.yearsOld}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Condition: {listing.condition}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Price: ${listing.price}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Price: ₹{listing.price}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Location: {listing.address}</p>
             <Button
               onClick={() => setSelectedListing(listing)}
