@@ -73,13 +73,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               if (!volunteerDoc.exists()) throw "Volunteer does not exist!";
 
               const volunteerData = volunteerDoc.data();
-              let { exp, level, pickupsToday, points } = volunteerData;
+              let { exp, level, pickupsToday, points, status } = volunteerData;
 
               pickupsToday = (pickupsToday || 0) - 1;
               points = (points || 0) + 15;
 
               const gainedExp = 50;
               exp += gainedExp;
+
+              status = "available"
 
               const nextLevelExp = getNextLevelExp(level);
               if (exp >= nextLevelExp) {
@@ -95,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 level,
                 pickupsToday,
                 rank,
+                status,
               });
 
               await createTransaction(volunteerId, "earned_collect", 15, "Points earned for completing task.")
