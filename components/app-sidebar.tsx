@@ -1,5 +1,5 @@
 "use client"
-import { Bell, Calendar, ClipboardEdit, Home, Mail, Search, Settings, Trophy, Users, Gift, MapPin } from "lucide-react"
+import { Bell, Calendar, ClipboardEdit, Home, Mail, Search, Settings, Trophy, Users, Gift, MapPin, ShoppingCart, Package } from "lucide-react"
 
 import {
   Sidebar,
@@ -45,6 +45,11 @@ export function AppSidebar() {
       title: "Rewards",
       url: "/citizen-dashboard/{citizenId}/rewards",
       icon: Gift,
+    },
+    {
+      title: "Resale",
+      url: "/citizen-dashboard/{citizenId}/resale",
+      icon: ShoppingCart,
     },
     {
       title: "Leaderboard",
@@ -101,6 +106,11 @@ export function AppSidebar() {
         title: "Tasks",
         url: `/{agencyId}/volunteer-dashboard/tasks`,
         icon: Mail,
+      },
+      {
+        title: "Orders",
+        url: `/{agencyId}/volunteer-dashboard/orders`,
+        icon: Package,
       },
       {
         title: "Rewards",

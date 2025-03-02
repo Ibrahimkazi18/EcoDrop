@@ -35,6 +35,7 @@ export default function SignUp() {
   const [agencyId, setAgencyId] = useState<string>("");
   const [contact, setContact] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [producerId, setProducerId] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role | "">(""); 
   const [error, setError] = useState<string>("");
@@ -97,116 +98,6 @@ export default function SignUp() {
     setIsOtpModalOpen(true);
   };
 
-  const handleSubmitSas = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    const date = new Date();
-  
-    try {
-        if(role === "volunteer"){
-            const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
-            const emailQuery = query(volunteerRef, where("email", "==", email));
-            const volunteerSnapshot = await getDocs(emailQuery);
-
-            if(!volunteerSnapshot.empty){
-              const volunteerDoc = volunteerSnapshot.docs[0];
-              console.log(volunteerDoc.id)
-              const volunteerDocRef = volunteerSnapshot.docs[0].ref;
-              const volunteerData = volunteerSnapshot.docs[0].data() as Volunteer;
-
-              if(volunteerData.username !== username){
-                setError("Email is registered but the username does not match. Please check your details.");
-                return;
-              }
-
-              await updateDoc(volunteerDocRef, { hasSetPermanentPassword: true, status: "available", points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank: "rookie", lastReportDate: null, lastReset: formatISO(new Date()), pickupsToday: 0, address: null });
-            }
-            else {
-              setError("This email is not registered under the specified agency. Contact the agency for access.");
-              return;
-            }
-        }
-
-        // Check if the email is already in use with a different role
-        const usersRef = collection(db, "users");
-        const emailQuery = query(usersRef, where("email", "==", email));
-        const querySnapshot = await getDocs(emailQuery);
-
-        // If the query finds any documents, the email is already registered
-        if (!querySnapshot.empty) {
-            const existingUser = querySnapshot.docs[0].data(); 
-
-            // Check if the existing user's role is different from the selected role
-            if (existingUser.role !== role) {
-                setError("This email is already registered under another role. Please use a different email.");
-                return; 
-            }
-        }
-
-        if (!role) {
-            setError("Please select a role before signing up.");
-            return; 
-          }
-          
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const userId = userCredential.user.uid;
-        setUserId(userId);
-
-        if (role === "volunteer") {
-          const volunteerRef = collection(db, `agencies/${agencyId}/volunteers`);
-          const q = query(volunteerRef, where("email", "==", email));
-          const volunteerSnapshot = await getDocs(q);
-
-          if(!volunteerSnapshot.empty){
-            const volunteerDoc = volunteerSnapshot.docs[0];
-            console.log(volunteerDoc.id)
-
-
-            const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: volunteerDoc.id,createdAt: date };
-
-            await setDoc(doc(db, "users", userId), userData);
-          }
-        }
-
-        else {
-          const userData: User = { id: userId, email, username: username, role, agencyId: agencyId, volunteerId: "",createdAt: date };
-  
-          await setDoc(doc(db, "users", userId), userData);
-  
-          if (role === "citizen") {
-              const citizenData: Citizen = { id: userId, email, username: username, role, createdAt: date, points: 0, totalPoints: 0, level: 0, streak: 0, exp: 0, rank:"rookie",lastReportDate: null, communityIds: [""], badResponses: 0, reports: [], address: null };
-              await setDoc(doc(db, "citizens", userId), citizenData);
-  
-          } else if (role === "agency") {
-              const agencyData: Agency = { id: userId, email, username: username, role, createdAt: date, contactInfo: { phone: contact, address: address }, volunteers: [""], ratings: [], badResults: 0, isBanned: false };
-              await setDoc(doc(db, "agencies", userId), agencyData);
-          } 
-        }
-
-        sessionStorage.setItem("user", "true");
-
-        toast({
-            title: "Sign Up Successful",
-            description: `${email} signed up at ${date.toLocaleString()}`,
-        });
-
-        if (role === "agency") {
-          router.push(`/agency-dashboard/${userId}`);
-        } else if (role === "citizen") {
-            router.push(`/citizen-dashboard/${userId}`);
-        } else if (role === "volunteer") {
-            router.push(`/${agencyId}/volunteer-dashboard`);
-        }
-    } catch (err: any) {
-        setError(err.message);
-        toast({
-            title: "Sign Up Unsuccessful",
-            description: `${email} could not sign up. Error: ${err.message}`,
-            variant: "destructive"
-        });
-    }
-  };
-
   const handleOtpSubmit = async () => {
     if (otp === generatedOtp) {
       setIsOtpModalOpen(false); 
@@ -238,16 +129,13 @@ export default function SignUp() {
             }
         }
 
-        // Check if the email is already in use with a different role
         const usersRef = collection(db, "users");
         const emailQuery = query(usersRef, where("email", "==", email));
         const querySnapshot = await getDocs(emailQuery);
 
-        // If the query finds any documents, the email is already registered
         if (!querySnapshot.empty) {
             const existingUser = querySnapshot.docs[0].data(); 
 
-            // Check if the existing user's role is different from the selected role
             if (existingUser.role !== role) {
                 setError("This email is already registered under another role. Please use a different email.");
                 return; 
@@ -258,6 +146,39 @@ export default function SignUp() {
             setError("Please select a role before signing up.");
             return; 
           }
+
+        try {
+          console.log("entered try")
+          if (role === "agency") {
+            const [agencyRes] = await Promise.all([
+              fetch(`/api/scrape`),
+            ]);
+  
+            const agencyData = await agencyRes.json();
+
+            console.log(agencyData)
+  
+            if (agencyData.error) {
+              setError("Failed to fetch agency data. Please try again later.");
+              return;
+            }
+  
+            console.log("produceid", producerId);
+            console.log(agencyData.data)
+            const finalAgencyData = agencyData.data.find((agency: any) => agency.produceId === producerId); 
+            
+            console.log(finalAgencyData)
+
+            if (!finalAgencyData) {
+              setError("Producer Id not found. Please enter a valid Producer Id.");
+              return;
+            }
+          }
+
+        } catch (error: any) {
+          setError(error.message);
+          return;
+        }
           
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const userId = userCredential.user.uid;
@@ -400,6 +321,20 @@ export default function SignUp() {
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Address"
+                  className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
+                />
+
+              
+                <Label htmlFor="producerId" className="text-neutral-700 font-black">Producer Id</Label>
+                <Input
+                  id="producerId"
+                  name="producerId"
+                  type="text"
+                  autoComplete="text"
+                  required
+                  value={producerId}
+                  onChange={(e) => setProducerId(e.target.value)}
                   placeholder="Address"
                   className="border-gray-900 p-[10px] w-full bg-white text-black text-base focus:border-[#0070f3] focus:outline-none"
                 />

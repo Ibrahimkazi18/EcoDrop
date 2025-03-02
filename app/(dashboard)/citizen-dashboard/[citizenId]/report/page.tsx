@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapPin, Upload, CheckCircle, Loader, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { createReport, getReportsCitizen } from "@/hooks/create-report";
+import { createReport, getReportsCitizen, uploadImage } from "@/hooks/create-report";
 import mbxGeocoding from "@mapbox/mapbox-sdk/services/geocoding"
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
@@ -12,7 +12,7 @@ import { addDoc, collection, doc, getDoc, getDocs, query, where } from "firebase
 import { computeImageHash } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavbar } from "@/app/context/navbarContext";
-import { AnyCnameRecord } from "node:dns";
+import ResellModal from "@/components/resellModal";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -21,6 +21,7 @@ const ReportPage = () => {
   const userId = auth.currentUser?.uid;
   const { toast } = useToast();
   const { triggerNavbarRefresh } = useNavbar();
+  const [isResellModalOpen, setIsResellModalOpen] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -55,7 +56,10 @@ const ReportPage = () => {
   const [verificationResult, setVerificationResult] = useState<{
     wasteType: string,
     quantity: string,
-    confidence: number
+    confidence: number,
+    isEwaste: boolean,
+    deviceCondition: string,
+    numberOfDevices: number,
   } | null> (null)
 
     const geocodingClient = mbxGeocoding({
@@ -163,16 +167,20 @@ const ReportPage = () => {
         ];
 
         const prompt = `You are an expert in waste management and recycling. Analyze this image and provide: 
-        1. The type of waste (e.g., plastic, paper, glass, metal, organic)
-        2. An estimate of the quantity or amount (only in kg or litres without explanation)
-        3. Your confidence level (based on type of waste) in this assessment (as a percentage)
-        
-        Respond in JSON format like this:
-        {
+          1. The type of waste (e.g., plastic, paper, glass, metal, organic, e-waste)
+          2. An estimate of the quantity or amount (only in kg or litres without explanation)
+          3. Your confidence level (based on type of waste) in this assessment (as a percentage)
+          4. If the waste is e-waste, check if there are 1-3 electronic devices and if they are in good condition.
+          
+          Respond in JSON format like this:
+          {
             "wasteType": "type of waste",
             "quantity": "estimated quantity with unit",
-            "confidence": confidence level as a number between 0 and 1
-        }`;
+            "confidence": confidence level as a number between 0 and 1,
+            "isEWaste": boolean,
+            "deviceCondition": "good" | "bad",
+            "numberOfDevices": number
+          }`;
 
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }]
@@ -185,6 +193,7 @@ const ReportPage = () => {
 
         try {
             const parseResult = JSON.parse(text);
+            console.log(parseResult);
 
             if(parseResult.wasteType && parseResult.quantity && parseResult.confidence) {
               if (
@@ -313,6 +322,102 @@ const ReportPage = () => {
         setIsSubmitting(false);
     }
   }
+
+  const handleResell = async (model: string, yearsOld: number, condition: string, address: string) => {
+    try {
+      const estimatedPrice = calculateDevicePrice(model, yearsOld, condition);
+
+      toast({
+        title: "Estimated Price",
+        description: `Your device is estimated to be worth $${estimatedPrice}.`,
+      });
+
+      await listDeviceForResale(verificationResult, model, yearsOld, condition, estimatedPrice, address);
+
+      toast({
+        title: "Device Listed for Resale!",
+        description: "Your device has been listed for resale.",
+      });
+    } catch (error) {
+      console.error("Error listing device for resale:", error);
+      toast({
+        title: "Listing Failed",
+        description: "Failed to list device for resale. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const calculateDevicePrice = (model: string, yearsOld: number, condition: string): number => {
+    const basePrices: { [key: string]: number } = {
+      "iPhone 12": 600,
+      "Samsung Galaxy S20": 500,
+      "MacBook Air M1": 800,
+      "Dell XPS 13": 700,
+    };
+  
+    const basePrice = basePrices[model] || 300; 
+    let price = basePrice * Math.pow(0.8, yearsOld); 
+    
+    switch (condition.toLowerCase()) {
+      case "good":
+        price *= 1.0; 
+        break;
+      case "fair":
+        price *= 0.7; 
+        break;
+      case "poor":
+        price *= 0.5; 
+        break;
+      default:
+        price *= 0.7; 
+    }
+  
+    return Math.round(price); 
+  };
+
+  const listDeviceForResale = async (
+    deviceInfo: any,
+    model: string,
+    yearsOld: number,
+    condition: string,
+    estimatedPrice: number,
+    address: string
+  ) => {
+    try {
+      let imageUrl = null;
+      
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile, "resale");
+      }
+
+      const deviceListing = {
+        userId: auth.currentUser?.uid,
+        imageUrl: imageUrl, 
+        name: deviceInfo.wasteType,
+        model,
+        yearsOld,
+        condition,
+        address: address, 
+        price: estimatedPrice,
+        status: "listed", 
+        createdAt: new Date(),
+      };
+  
+      const resellRef = collection(db, "resale");
+      await addDoc(resellRef, deviceListing);
+
+      setNewReport({location: "", amount: "", type: ""});
+      setFile(null);
+      setPreview(null);
+      setVerificationStatus("idle");
+      setVerificationResult(null);
+
+      triggerNavbarRefresh();
+    } catch (error) {
+      throw error; 
+    }
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -469,6 +574,12 @@ const ReportPage = () => {
             'Verify Waste'
           )}
         </Button>
+
+        <ResellModal
+          isOpen={isResellModalOpen}
+          onClose={() => setIsResellModalOpen(false)}
+          onSell={handleResell}
+        />
   
         {verificationStatus === 'failure' && verificationResult && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 sm:mb-8 rounded-r-lg sm:rounded-r-xl">
@@ -494,12 +605,23 @@ const ReportPage = () => {
                 <div className="mt-2 text-xs sm:text-sm text-green-700">
                   <p>Waste Type: {verificationResult.wasteType}</p>
                   <p>Quantity: {verificationResult.quantity}</p>
+                  <p>No of Devices: {verificationResult.numberOfDevices}</p>
                   <p>Confidence: {(verificationResult.confidence * 100).toFixed(2)}%</p>
                 </div>
               </div>
             </div>
           </div>
         )}
+
+              <Button onClick={() => setIsResellModalOpen(true)} className="my-4">
+                Resell Device
+              </Button>
+        { verificationStatus === 'success' && verificationResult?.isEwaste && verificationResult.numberOfDevices === 1 && (
+              <Button onClick={() => setIsResellModalOpen(true)} className="my-4">
+                Resell Device
+              </Button>
+            ) 
+        }
   
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="relative">

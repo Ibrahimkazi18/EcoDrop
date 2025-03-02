@@ -77,7 +77,7 @@ const VolunteerDashboard = ({ params }: { params: { agencyId: string } }) => {
       months.push({ month: monthYear, tasks: 0 });
     }
 
-    userTasks.forEach((task) => {
+    userTasks?.forEach((task) => {
         const taskDate = task.createdAt instanceof Date
         ? new Date(task.createdAt.toISOString().split("T")[0])
         : new Date(new Date(task.createdAt.seconds * 1000).toISOString().split("T")[0]);

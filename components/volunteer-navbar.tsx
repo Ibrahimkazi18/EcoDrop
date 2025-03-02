@@ -121,7 +121,7 @@ export default function VolunteerNavbar() {
 
   return (
     <nav
-      className={`flex items-center bg-black justify-between p-3 sm:p-4 shadow-md sticky top-0 z-50 w-[100vw] ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
+      className={`flex items-center dark:bg-black justify-between p-3 sm:p-4 shadow-md sticky top-0 z-50 w-[100vw] ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
         }`}
     >
       <div className="flex items-center space-x-2">
