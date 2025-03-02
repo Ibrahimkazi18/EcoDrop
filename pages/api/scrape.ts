@@ -1,9 +1,7 @@
-import { log } from 'console';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 type TableData = {
     produceId: string;
-    companyName: string;
 };
 
 export default async function handler(
@@ -53,21 +51,20 @@ export default async function handler(
                 } else {
                     // Assuming the data structure is something like { results: [...], totalPages: 5 }
                     // You need to adjust this based on the actual structure
-                    const items = data.content || []; // Replace 'results' with the correct property name
+                    const items = data.content || []; 
 
                     // Extract produceId and companyName from the response
                     items.forEach((item: any) => {
                         // console.log("this is the itemss shit", item);
 
                         allData.push({
-                            produceId: item.producerId || '',  // Replace with actual field names from API
-                            companyName: item.companyName || '',  // Replace with actual field names from API
+                            produceId: item.producerId || ''
                         });
                     });
 
                     // If there is more data, move to the next page
                     page += 1;
-                    hasNextPage = page <= data.totalPages; // Adjust based on the total number of pages or condition from the API response
+                    hasNextPage = page <= 5; // Adjust based on the total number of pages or condition from the API response
                     // hasNextPage = false;
                 }
             }
