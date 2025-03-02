@@ -14,7 +14,7 @@ const VolunteerAdd = async ({ params }: { params: { agencyId: string; volunteerI
 
   return (
     <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex-1 space-y-4 p-8 pt-6 w-[50vw]">
         <VolunteerForm initialData={volunteer} agencyId={params.agencyId} />
       </div>
     </div>

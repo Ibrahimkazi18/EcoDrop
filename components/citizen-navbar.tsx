@@ -20,9 +20,9 @@ export default function CitizenNavbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { refreshNavbar } = useNavbar();  
+  const { refreshNavbar } = useNavbar();
 
-  const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5)); 
+  const getNextLevelExp = (level: number) => Math.floor(100 * Math.pow(level, 1.5));
 
   useEffect(() => {
     const fetchCitizenData = async () => {
@@ -106,26 +106,25 @@ export default function CitizenNavbar() {
       console.error("Error updating notification:", error);
     }
   };
-  
+
 
   return (
     <nav
-      className={`flex items-center justify-between p-3 sm:p-4 dark:shadow-slate-900 shadow-md sticky top-0 z-50 w-[100vw] ${
-        isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`
-      }`}
+      className={`flex items-center justify-between p-3 sm:p-4 bg-black dark:shadow-slate-900 shadow-md sticky top-0 z-50 w-[100vw] ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[96vw] lg:w-[95.5vw]`
+        }`}
     >
       <div className="flex items-center space-x-2">
         <SidebarTrigger onClick={toggle} className="block" />
         <div className="flex items-center">
-          <Leaf color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="ml-2 text-lg sm:text-xl font-bold text-green-600">EcoDrop</span>
+          <Leaf color="lightGreen" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="ml-2 text-lg sm:text-xl font-bold text-green-300">EcoDrop</span>
         </div>
       </div>
 
       <div className="hidden sm:flex items-center space-x-4">
         <div className="relative flex items-center">
           <div className="relative group">
-            <img 
+            <img
               src={`/${rank}.png`}
               alt="Badge"
               className="w-6 h-6 mr-2"
@@ -194,8 +193,8 @@ export default function CitizenNavbar() {
 
         {/* Points Display */}
         <div className="flex items-center space-x-1">
-          <Coins color="green" className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-green-600 text-sm sm:text-base">
+          <Coins color="lightGreen" className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="text-green-300 text-sm sm:text-base">
             {citizenPoints ?? "Loading..."}
           </span>
         </div>

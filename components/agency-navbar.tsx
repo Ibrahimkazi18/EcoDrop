@@ -17,14 +17,14 @@ export default function AgencyNavbar() {
     sessionStorage.removeItem("user");
     router.push("/sign-in"); // Redirect to sign-in after logging out
   };
-  
+
   const toggle = () => {
     setIsOpen((prev) => !prev)
   }
 
   return (
-    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md ${isOpen ? `w-[87.5rem]` : `w-[102.5rem]`} sticky top-0 z-50`}>
-      <SidebarTrigger onClick={toggle}/>
+    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md w-full ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`} sticky top-0 z-50`}>
+      <SidebarTrigger onClick={toggle} />
       <div className="flex items-center">
         <Leaf color="green" />
         <span className="ml-2 text-xl font-bold text-green-600">EcoDrop</span>
