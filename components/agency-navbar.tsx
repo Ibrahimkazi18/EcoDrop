@@ -23,11 +23,11 @@ export default function AgencyNavbar() {
   }
 
   return (
-    <nav className={`flex items-center justify-between p-4 dark:shadow-slate-900 shadow-md w-full ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`} sticky top-0 z-50`}>
+    <nav className={`flex items-center justify-between p-4 dark:bg-black shadow-md w-full ${isOpen ? `xl:w-[83vw] lg:w-[74.5vw]` : `xl:w-[97.1vw] lg:w-[95.5vw]`} sticky top-0 z-50`}>
       <SidebarTrigger onClick={toggle} />
       <div className="flex items-center">
-        <Leaf color="green" />
-        <span className="ml-2 text-xl font-bold text-green-600">EcoDrop</span>
+        <Leaf color="lightGreen" />
+        <span className="ml-2 text-xl font-bold text-green-300">EcoDrop</span>
       </div>
       <div className="flex items-center space-x-4">
         {/* <div className="flex items-center border border-gray-300 rounded-md">
