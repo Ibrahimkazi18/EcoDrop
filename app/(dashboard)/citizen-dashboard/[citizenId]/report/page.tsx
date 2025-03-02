@@ -350,13 +350,92 @@ const ReportPage = () => {
 
   const calculateDevicePrice = (model: string, yearsOld: number, condition: string): number => {
     const basePrices: { [key: string]: number } = {
-      "iPhone 12": 600,
-      "Samsung Galaxy S20": 500,
-      "MacBook Air M1": 800,
-      "Dell XPS 13": 700,
+      // Smartphones
+      "iPhone 15 Pro": 134900,
+      "iPhone 14": 79900,
+      "iPhone 13": 59900,
+      "Samsung Galaxy S23 Ultra": 124999,
+      "Samsung Galaxy S22": 74999,
+      "OnePlus 11 Pro": 69999,
+      "Google Pixel 7 Pro": 84999,
+      "Xiaomi 13 Pro": 79999,
+      "Vivo X90 Pro": 89999,
+      "Oppo Find X6 Pro": 89999,
+    
+      // Laptops
+      "MacBook Air M2": 114900,
+      "MacBook Pro 14-inch M2 Pro": 199900,
+      "Dell XPS 13 Plus": 169990,
+      "HP Spectre x360": 149999,
+      "Lenovo ThinkPad X1 Carbon": 159999,
+      "Asus ROG Zephyrus G14": 149999,
+      "Acer Swift 5": 99999,
+      "Microsoft Surface Laptop 5": 129999,
+      "LG Gram 17": 149999,
+      "MSI Prestige 14": 109999,
+    
+      // Air Conditioners
+      "LG 1.5 Ton 5-Star Inverter Split AC": 44999,
+      "Daikin 1.5 Ton 5-Star Inverter Split AC": 46999,
+      "Voltas 1.5 Ton 3-Star Split AC": 34999,
+      "Blue Star 1.5 Ton 5-Star Inverter Split AC": 42999,
+      "Hitachi 1.5 Ton 5-Star Inverter Split AC": 45999,
+      "Carrier 1.5 Ton 3-Star Split AC": 32999,
+      "Samsung 1.5 Ton 5-Star Inverter Split AC": 43999,
+      "Panasonic 1.5 Ton 5-Star Inverter Split AC": 44999,
+      "Whirlpool 1.5 Ton 3-Star Split AC": 33999,
+      "Godrej 1.5 Ton 5-Star Inverter Split AC": 41999,
+    
+      // Washing Machines
+      "LG 8 Kg 5-Star Inverter Front Load Washing Machine": 44999,
+      "Samsung 8 Kg 5-Star Inverter Front Load Washing Machine": 42999,
+      "Whirlpool 7 Kg 5-Star Fully Automatic Top Load Washing Machine": 24999,
+      "IFB 8 Kg 5-Star Front Load Washing Machine": 46999,
+      "Bosch 7 Kg 5-Star Front Load Washing Machine": 39999,
+      "Haier 7 Kg 5-Star Fully Automatic Top Load Washing Machine": 22999,
+      "Panasonic 8 Kg 5-Star Front Load Washing Machine": 43999,
+      "Godrej 7 Kg 5-Star Fully Automatic Top Load Washing Machine": 23999,
+      "Onida 6.5 Kg 5-Star Fully Automatic Top Load Washing Machine": 19999,
+      "Voltas Beko 8 Kg 5-Star Front Load Washing Machine": 41999,
+    
+      // Televisions
+      "Sony Bravia 55-inch 4K OLED Smart TV": 149999,
+      "LG 55-inch 4K OLED Smart TV": 139999,
+      "Samsung 55-inch 4K QLED Smart TV": 129999,
+      "OnePlus 55-inch 4K QLED Smart TV": 69999,
+      "Mi 55-inch 4K Android Smart TV": 54999,
+      "Toshiba 55-inch 4K Android Smart TV": 49999,
+      "Vu 55-inch 4K Android Smart TV": 44999,
+      "Panasonic 55-inch 4K LED Smart TV": 59999,
+      "Thomson 55-inch 4K Android Smart TV": 39999,
+      "Realme 55-inch 4K Android Smart TV": 42999,
+    
+      // Refrigerators
+      "LG 260 L 3-Star Inverter Double Door Refrigerator": 32999,
+      "Samsung 253 L 3-Star Inverter Double Door Refrigerator": 31999,
+      "Whirlpool 265 L 3-Star Inverter Double Door Refrigerator": 30999,
+      "Haier 258 L 3-Star Inverter Double Door Refrigerator": 29999,
+      "Godrej 260 L 3-Star Inverter Double Door Refrigerator": 28999,
+      "Panasonic 255 L 3-Star Inverter Double Door Refrigerator": 31999,
+      "Bosch 260 L 3-Star Inverter Double Door Refrigerator": 33999,
+      "Hitachi 265 L 3-Star Inverter Double Door Refrigerator": 34999,
+      "Voltas Beko 260 L 3-Star Inverter Double Door Refrigerator": 29999,
+      "IFB 260 L 3-Star Inverter Double Door Refrigerator": 35999,
+    
+      // Kitchen Appliances
+      "Philips Air Fryer HD9252/90": 9999,
+      "Bajaj Majesty HMX 3 Litre Induction Cooktop": 1999,
+      "Prestige Iris 750W Mixer Grinder": 2999,
+      "Butterfly Smart Glass 3 Burner Gas Stove": 4999,
+      "Hindware Snowcrest 25 L Microwave Oven": 8999,
+      "Inalsa Excel 1000W Juicer Mixer Grinder": 2499,
+      "Morphy Richards 400W Food Processor": 4999,
+      "Kent 16038 1500W Water Purifier": 14999,
+      "Eureka Forbes Aquasure Smart Plus RO+UV+UF Water Purifier": 16999,
+      "Kaff 50 L Oven Toaster Grill": 7999,
     };
   
-    const basePrice = basePrices[model] || 300; 
+    const basePrice = basePrices[model] || 5000; 
     let price = basePrice * Math.pow(0.8, yearsOld); 
     
     switch (condition.toLowerCase()) {

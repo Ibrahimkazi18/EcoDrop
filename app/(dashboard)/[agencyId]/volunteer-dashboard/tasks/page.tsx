@@ -718,14 +718,6 @@ const handleTaskAccept = async () => {
                         Accept Task
                       </Button>
                     )}
-
-                    {currentVolunteer && assignedTask.volunteersAccepted.includes(currentVolunteer?.id) && assignedTask.volunteersAssigned.length > 1 && !assignedTask.verificationImageUrl && (
-                      <Button
-                        className="flex justify-between space-x-2"
-                      >
-                        <MessageSquarePlus /> <span>Connect</span>
-                      </Button>
-                    )}
                   </div>
 
                   <div> 
