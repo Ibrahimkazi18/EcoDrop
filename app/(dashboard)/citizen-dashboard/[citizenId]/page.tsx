@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Citizen, ReportType } from "@/types-db";
+import { Footprints } from "lucide-react";
+import LandingDivider from "@/app/(landing)/components/LandingDivider";
 
 interface GraphData {
-    month: string;
-    reports: number;
+  month: string;
+  reports: number;
 }
 
 const badgeData = [
@@ -28,6 +30,7 @@ const CitizenStats = ({ params }: { params: { citizenId: string } }) => {
   const [rank, setRank] = useState<"rookie" | "pro" | "expert" | "master">("rookie");
   const [reports, setReports] = useState<number>(0);
   const [points, setPoints] = useState<number>(0);
+  const [carbonSaved, setCarbonSaved] = useState<number>(0);
   const [selectedBadge, setSelectedBadge] = useState<{ name: string; image: string; level: number } | null>(null);
 
   const fetchUserData = async () => {
@@ -55,6 +58,17 @@ const CitizenStats = ({ params }: { params: { citizenId: string } }) => {
     const allReports: ReportType[] = reportsData.reports;
     const userReports = allReports.filter((report) => report.userId === params.citizenId);
 
+    const totalEwasteKg = userReports.reduce((total, report) => {
+      // Extract the numeric part of the amountOfWaste (remove " kg" and convert to number)
+      const amount = parseFloat(report.amount.replace(/[^\d.-]/g, ''));
+
+      // Add the extracted value to the total
+      return total + (isNaN(amount) ? 0 : amount);
+    }, 0);
+
+    // After the reduce function finishes, update the state
+    setCarbonSaved(totalEwasteKg);
+
     const last12MonthsData = generateLast12MonthsData(userReports);
     setData(last12MonthsData);
     setLoading(false);
@@ -73,7 +87,7 @@ const CitizenStats = ({ params }: { params: { citizenId: string } }) => {
     }
 
     userReports.forEach((report) => {
-        const reportDate = report.createdAt instanceof Date
+      const reportDate = report.createdAt instanceof Date
         ? new Date(report.createdAt.toISOString().split("T")[0])
         : new Date(new Date(report.createdAt.seconds * 1000).toISOString().split("T")[0]);
       const monthYear = `${reportDate.toLocaleString("default", { month: "short" })} ${reportDate.getFullYear()}`;
@@ -96,37 +110,40 @@ const CitizenStats = ({ params }: { params: { citizenId: string } }) => {
       <h2 className="text-2xl font-bold">Citizen Stats</h2>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 text-center flex flex-col items-center justify-center h-full relative group perspective-1000 space-y-2">
-            <p className="text-xl font-semibold">Current Rank</p>
-            {loading ? (
-                <Skeleton className="w-24 h-24" />
-            ) : (
-                <div className="transition-transform duration-300 transform-style-3d">
-                <img 
-                    src={`/${rank}.png`} 
-                    alt={rank} 
-                    className="w-24 h-24" 
-                />
-                </div>
-            )}
-            <Badge variant="default" className="capitalize">{loading ? <Skeleton className="w-16 h-8" /> : rank}</Badge>
+        <Card className="p-6 text-center flex flex-col items-center shadow-[0px_0px_5px_0px_rgba(255,255,255,1)] justify-center h-full relative group perspective-1000 space-y-2">
+          <p className="text-xl font-semibold">Current Rank</p>
+          {loading ? (
+            <Skeleton className="w-24 h-24" />
+          ) : (
+            <div className="transition-transform duration-300 transform-style-3d">
+              <img
+                src={`/${rank}.png`}
+                alt={rank}
+                className="w-24 h-24"
+              />
+            </div>
+          )}
+          <Badge variant="default" className="capitalize">{loading ? <Skeleton className="w-16 h-8" /> : rank}</Badge>
         </Card>
 
         <div className="grid-rows-2 w-full col-span-2">
-          <div className="grid grid-cols-2 gap-4 row-span-1">
-            <Card className="p-4 text-center">
-              <p className="text-xl font-semibold">Reports Submitted</p>
+          <div className="grid grid-cols-3 gap-4 row-span-1">
+            <Card className="p-4 text-center shadow-[0px_0px_5px_0px_rgba(255,255,255,1)]">
+              <p className="text-xl font-semibold md:text-lg">Reports Submitted</p>
               <div className="text-3xl">{loading ? <Skeleton className="w-16 h-8 mx-auto" /> : reports}</div>
             </Card>
-
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center shadow-[0px_0px_5px_0px_rgba(255,255,255,1)]">
+              <p className="text-xl font-semibold">Carbon Saved</p>
+              <div className="text-3xl">{loading ? <Skeleton className="w-16 h-8 mx-auto" /> : carbonSaved} kg</div>
+            </Card>
+            <Card className="p-4 text-center shadow-[0px_0px_5px_0px_rgba(255,255,255,1)]">
               <p className="text-xl font-semibold">Points Earned</p>
               <div className="text-3xl">{loading ? <Skeleton className="w-16 h-8 mx-auto" /> : points}</div>
             </Card>
           </div>
 
           {/* All Badges Section */}
-          <Card className="p-4 mt-4 h-40">
+          <Card className="p-4 mt-4 h-40 shadow-[0px_0px_5px_0px_rgba(255,255,255,1)]">
             <h3 className="text-lg font-semibold">All Badges</h3>
             <div className="grid grid-cols-4 gap-4 ">
               {badgeData.map((badge, index) => (
@@ -156,7 +173,7 @@ const CitizenStats = ({ params }: { params: { citizenId: string } }) => {
       </div>
 
       {/* Graph Section */}
-      <div className="mt-6">
+      <div className="mt-16">
         <h3 className="text-lg font-semibold">Reports Overview (Last 12 Months)</h3>
         {loading ? (
           <Skeleton className="w-full h-32 mt-4 bg-indigo-50 dark:fill-slate-700" />
